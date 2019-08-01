@@ -22,7 +22,6 @@ class manageController extends viewController {
     }
 
     public function doAction() {
-
         $this->featureSet->filter( 'beginDoAction', $this );
 
         $this->checkLoginRequiredAndRedirect();

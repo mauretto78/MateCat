@@ -1,5 +1,7 @@
 <?php
 
+use SimpleDIC\DIC;
+
 /**
  * Created by PhpStorm.
  * @author domenico domenico@translated.net / ostico@gmail.com
@@ -9,30 +11,29 @@
  */
 class Bootstrap {
 
-    public static $_INI_VERSION;
+    public static    $_INI_VERSION;
     protected static $CONFIG;
     protected static $_ROOT;
 
     /**
      * @var FeatureSet
      */
-    private $autoLoadedFeatureSet ;
+    private $autoLoadedFeatureSet;
 
     public static function start() {
         new self();
     }
 
     private function __construct() {
-
-        self::$_ROOT        = realpath( dirname( __FILE__ ) . '/../' );
-        self::$CONFIG       = parse_ini_file( self::$_ROOT . DIRECTORY_SEPARATOR . 'inc/config.ini', true );
-        $OAUTH_CONFIG       = @parse_ini_file( self::$_ROOT . DIRECTORY_SEPARATOR . 'inc/oauth_config.ini', true );
+        self::$_ROOT  = realpath( dirname( __FILE__ ) . '/../' );
+        self::$CONFIG = parse_ini_file( self::$_ROOT . DIRECTORY_SEPARATOR . 'inc/config.ini', true );
+        $OAUTH_CONFIG = @parse_ini_file( self::$_ROOT . DIRECTORY_SEPARATOR . 'inc/oauth_config.ini', true );
 
         register_shutdown_function( [ 'Bootstrap', 'shutdownFunctionHandler' ] );
         set_exception_handler( [ 'Bootstrap', 'exceptionHandler' ] );
 
-        $mv = parse_ini_file( 'version.ini' );
-        self::$_INI_VERSION = $mv['version'];
+        $mv                 = parse_ini_file( 'version.ini' );
+        self::$_INI_VERSION = $mv[ 'version' ];
 
         $this->_setIncludePath();
         spl_autoload_register( [ 'Bootstrap', 'loadClass' ] );
@@ -59,7 +60,7 @@ class Bootstrap {
         }
 
         if ( empty( INIT::$STORAGE_DIR ) ) {
-            INIT::$STORAGE_DIR = INIT::$ROOT . "/local_storage" ;
+            INIT::$STORAGE_DIR = INIT::$ROOT . "/local_storage";
         }
 
         date_default_timezone_set( INIT::$TIME_ZONE );
@@ -80,13 +81,13 @@ class Bootstrap {
         INIT::$CONTROLLER_ROOT                 = INIT::$ROOT . '/lib/Controller';
         INIT::$UTILS_ROOT                      = INIT::$ROOT . '/lib/Utils';
 
-        INIT::$TASK_RUNNER_CONFIG              = parse_ini_file( self::$_ROOT . DIRECTORY_SEPARATOR . 'inc/task_manager_config.ini', true );
+        INIT::$TASK_RUNNER_CONFIG = parse_ini_file( self::$_ROOT . DIRECTORY_SEPARATOR . 'inc/task_manager_config.ini', true );
 
         try {
-            Log::$uniqID = ( isset( $_COOKIE['PHPSESSID'] ) ? substr( $_COOKIE['PHPSESSID'], 0 , 13 ) : uniqid() );
+            Log::$uniqID = ( isset( $_COOKIE[ 'PHPSESSID' ] ) ? substr( $_COOKIE[ 'PHPSESSID' ], 0, 13 ) : uniqid() );
             WorkerClient::init();
-            Database::obtain ( INIT::$DB_SERVER, INIT::$DB_USER, INIT::$DB_PASS, INIT::$DB_DATABASE );
-        } catch( \Exception $e ){
+            Database::obtain( INIT::$DB_SERVER, INIT::$DB_USER, INIT::$DB_PASS, INIT::$DB_DATABASE );
+        } catch ( \Exception $e ) {
             Log::doJsonLog( $e->getMessage() );
         }
 
@@ -114,10 +115,10 @@ class Bootstrap {
         if ( !is_dir( INIT::$CONVERSIONERRORS_REPOSITORY ) ) {
             mkdir( INIT::$CONVERSIONERRORS_REPOSITORY, 0755, true );
         }
-        if ( !is_dir( INIT::$TMP_DOWNLOAD) ) {
+        if ( !is_dir( INIT::$TMP_DOWNLOAD ) ) {
             mkdir( INIT::$TMP_DOWNLOAD, 0755, true );
         }
-        if ( !is_dir( INIT::$QUEUE_PROJECT_REPOSITORY) ) {
+        if ( !is_dir( INIT::$QUEUE_PROJECT_REPOSITORY ) ) {
             mkdir( INIT::$QUEUE_PROJECT_REPOSITORY, 0755, true );
         }
 
@@ -143,17 +144,22 @@ class Bootstrap {
             }
         }
 
+        $this->initDIC();
         $this->initMandatoryPlugins();
         $this->notifyBootCompleted();
-
     }
 
     private function initMandatoryPlugins() {
         $this->autoLoadedFeatureSet = new FeatureSet();
     }
 
+    private function initDIC() {
+        $dic_config = parse_ini_file( __DIR__ . '/dic.ini', true );
+        DIC::init( $dic_config );
+    }
+
     private function notifyBootCompleted() {
-        $this->autoLoadedFeatureSet->run('bootstrapCompleted');
+        $this->autoLoadedFeatureSet->run( 'bootstrapCompleted' );
     }
 
     public static function exceptionHandler( $exception ) {
@@ -166,23 +172,23 @@ class Bootstrap {
              */
             throw $exception;
         } catch ( InvalidArgumentException $e ) {
-            $code = 400;
+            $code    = 400;
             $message = "Bad Request";
         } catch ( Exceptions\NotFoundException $e ) {
-            $code = 404;
+            $code    = 404;
             $message = "Not Found";
             \Log::doJsonLog( [ "error" => 'Record Not found error for URI: ' . $_SERVER[ 'REQUEST_URI' ] . " - " . "{$exception->getMessage()} ", "trace" => $exception->getTrace() ] );
-        }  catch ( Exceptions\AuthorizationError $e ) {
-            $code = 403;
+        } catch ( Exceptions\AuthorizationError $e ) {
+            $code    = 403;
             $message = "Forbidden";
             \Log::doJsonLog( [ "error" => 'Access not allowed error for URI: ' . $_SERVER[ 'REQUEST_URI' ] . " - " . "{$exception->getMessage()} ", "trace" => $exception->getTrace() ] );
         } catch ( \PDOException $e ) {
-            $code = 503;
+            $code    = 503;
             $message = "Service Unavailable";
             \Utils::sendErrMailReport( $exception->getMessage() . "" . $exception->getTraceAsString(), 'Generic error' );
             \Log::doJsonLog( [ "error" => $exception->getMessage(), "trace" => $exception->getTrace() ] );
         } catch ( Exception $e ) {
-            $code = 500;
+            $code    = 500;
             $message = "Internal Server Error";
             \Utils::sendErrMailReport( $exception->getMessage() . "" . $exception->getTraceAsString(), 'Generic error' );
             \Log::doJsonLog( [ "error" => $exception->getMessage(), "trace" => $exception->getTrace() ] );
@@ -219,14 +225,14 @@ class Bootstrap {
 
     public static function shutdownFunctionHandler() {
 
-        $errorType = array(
+        $errorType = [
                 E_CORE_ERROR        => 'E_CORE_ERROR',
                 E_COMPILE_ERROR     => 'E_COMPILE_ERROR',
                 E_ERROR             => 'E_ERROR',
                 E_USER_ERROR        => 'E_USER_ERROR',
                 E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR',
                 E_DEPRECATED        => 'DEPRECATION_NOTICE', //From PHP 5.3
-        );
+        ];
 
         # Getting last error
         $error = error_get_last();
@@ -274,18 +280,18 @@ class Bootstrap {
 
                     //json_rersponse
                     if ( INIT::$PRINT_ERRORS ) {
-                        echo json_encode( array(
-                                "errors" => array( array( "code" => -1000, "message" => $output ) ), "data" => array()
-                        ) );
+                        echo json_encode( [
+                                "errors" => [ [ "code" => -1000, "message" => $output ] ], "data" => []
+                        ] );
                     } else {
-                        echo json_encode( array(
-                                "errors"  => array(
-                                        array(
+                        echo json_encode( [
+                                "errors"  => [
+                                        [
                                                 "code"    => -1000,
                                                 "message" => "Oops we got an Error. Contact <a href='mailto:" . INIT::$SUPPORT_MAIL . "'>" . INIT::$SUPPORT_MAIL . "</a>"
-                                        )
-                                ), "data" => array()
-                        ) );
+                                        ]
+                                ], "data" => []
+                        ] );
                     }
 
                 } elseif ( INIT::$PRINT_ERRORS ) {
@@ -319,15 +325,15 @@ class Bootstrap {
 
     public static function sessionStart() {
         $session_status = session_status();
-        if( $session_status == PHP_SESSION_NONE ){
+        if ( $session_status == PHP_SESSION_NONE ) {
             session_start();
-        } elseif( $session_status == PHP_SESSION_DISABLED ){
+        } elseif ( $session_status == PHP_SESSION_DISABLED ) {
             throw new \Exception( "MateCat needs to have sessions. Sessions must be enabled." );
         }
     }
 
     protected static function _setIncludePath( $custom_paths = null ) {
-        $def_path = array(
+        $def_path = [
                 self::$_ROOT,
                 self::$_ROOT . "/lib/Controller/AbstractControllers",
                 self::$_ROOT . "/lib/Controller/API",
@@ -341,13 +347,13 @@ class Bootstrap {
                 self::$_ROOT . "/lib/Decorator",
                 self::$_ROOT . "/lib/Plugins",
 
-        );
+        ];
         if ( !empty( $custom_paths ) ) {
             $def_path = array_merge( $def_path, $custom_paths );
         }
 
         set_include_path(
-            implode( PATH_SEPARATOR, $def_path ) . PATH_SEPARATOR . get_include_path()
+                implode( PATH_SEPARATOR, $def_path ) . PATH_SEPARATOR . get_include_path()
         );
 
     }
@@ -375,21 +381,23 @@ class Bootstrap {
     public static function getEnvConfig() {
 
         if ( getenv( 'ENV' ) !== false ) {
-            self::$CONFIG['ENV'] = getenv( 'ENV' );
+            self::$CONFIG[ 'ENV' ] = getenv( 'ENV' );
         }
 
-        return self::$CONFIG[ self::$CONFIG['ENV'] ];
+        return self::$CONFIG[ self::$CONFIG[ 'ENV' ] ];
     }
 
     /**
      * Returns a specific key from parsed coniguration file
      *
      * @param $key
+     *
      * @return mixed
      */
     public static function getEnvConfigKey( $key ) {
-        $config = self::getEnvConfig() ;
-        return @$config[ $key ] ;
+        $config = self::getEnvConfig();
+
+        return @$config[ $key ];
     }
 
     /**
@@ -402,12 +410,12 @@ class Bootstrap {
      */
     public static function initConfig() {
 
-        INIT::$ENV = self::$CONFIG['ENV'];
+        INIT::$ENV          = self::$CONFIG[ 'ENV' ];
         INIT::$BUILD_NUMBER = self::$_INI_VERSION;
 
         $env = self::getEnvConfig();
 
-        foreach( $env as $KEY => $value ){
+        foreach ( $env as $KEY => $value ) {
             if ( property_exists( 'INIT', $KEY ) ) {
                 INIT::${$KEY} = $value;
             }
@@ -450,7 +458,7 @@ class Bootstrap {
 
         Features::setIncludePath();
 
-        if (!empty( INIT::$MANDATORY_PLUGINS ) ) {
+        if ( !empty( INIT::$MANDATORY_PLUGINS ) ) {
             INIT::$AUTOLOAD_PLUGINS = array_merge( INIT::$AUTOLOAD_PLUGINS, INIT::$MANDATORY_PLUGINS );
         }
     }
@@ -460,14 +468,15 @@ class Bootstrap {
      *
      * @return bool true if all mandatory keys are present, false otherwise
      */
-    public static function areMandatoryKeysPresent()  {
-        $merged_config = array_merge(self::$CONFIG, self::$CONFIG[ INIT::$ENV ] );
+    public static function areMandatoryKeysPresent() {
+        $merged_config = array_merge( self::$CONFIG, self::$CONFIG[ INIT::$ENV ] );
 
         foreach ( INIT::$MANDATORY_KEYS as $key ) {
-            if ( !array_key_exists($key, $merged_config) || $merged_config[ $key ] === null ) {
+            if ( !array_key_exists( $key, $merged_config ) || $merged_config[ $key ] === null ) {
                 return false;
             }
         }
+
         return true;
     }
 
@@ -477,25 +486,26 @@ class Bootstrap {
      * @return bool true if the main OAuth keys are present, false otherwise
      */
     public static function areOauthKeysPresent() {
-        if( empty( INIT::$OAUTH_CLIENT_ID ) ) {
+        if ( empty( INIT::$OAUTH_CLIENT_ID ) ) {
             return false;
         }
 
-        if( empty( INIT::$OAUTH_CLIENT_SECRET ) ) {
+        if ( empty( INIT::$OAUTH_CLIENT_SECRET ) ) {
             return false;
         }
 
-        if( empty( INIT::$OAUTH_CLIENT_APP_NAME ) ) {
+        if ( empty( INIT::$OAUTH_CLIENT_APP_NAME ) ) {
             return false;
         }
 
         return true;
     }
 
-    public static function isGDriveConfigured(){
-        if( empty( INIT::$OAUTH_BROWSER_API_KEY ) ) {
+    public static function isGDriveConfigured() {
+        if ( empty( INIT::$OAUTH_BROWSER_API_KEY ) ) {
             return false;
         }
+
         return true;
     }
 

@@ -27,8 +27,8 @@ class Search_ReplaceHistory {
      * @param Search_ReplaceEventIndexDAOInterface $replaceEventIndexDAO
      * @param null                                 $ttl
      */
-    public function __construct( $idJob, Search_ReplaceEventDAOInterface $replaceEventDAO, Search_ReplaceEventIndexDAOInterface $replaceEventIndexDAO, $ttl = null ) {
-        $this->idJob                = $idJob;
+    public function __construct(  Search_ReplaceEventDAOInterface $replaceEventDAO, Search_ReplaceEventIndexDAOInterface $replaceEventIndexDAO, $ttl = null ) {
+
         $this->replaceEventDAO      = $replaceEventDAO;
         $this->replaceEventIndexDAO = $replaceEventIndexDAO;
 
@@ -36,6 +36,13 @@ class Search_ReplaceHistory {
             $this->replaceEventDAO->setTtl( $ttl );
             $this->replaceEventIndexDAO->setTtl( $ttl );
         }
+    }
+
+    /**
+     * @param int $idJob
+     */
+    public function setIdJob( $idJob ) {
+        $this->idJob = $idJob;
     }
 
     /**
