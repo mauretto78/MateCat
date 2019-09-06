@@ -197,7 +197,7 @@ class ChildProjectService {
      */
     protected function getSessionForFiles( UserModel $assignee = null ) {
         if ( $assignee ) {
-            return $assignee->getSession()->login();
+            return (new Authenticator($assignee->getSession()))->login();
         }
         else {
             return $this->session ;

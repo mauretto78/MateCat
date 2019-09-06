@@ -10,6 +10,7 @@ namespace Features\Dqf\Model;
 
 use API\V2\Exceptions\AuthenticationError;
 use Exception;
+use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\GenericSession;
 use Features\Dqf\Service\ISession;
 use Features\Dqf\Service\Session;
@@ -68,7 +69,7 @@ class UserModel {
      */
     public function validCredentials() {
         try {
-            $this->getSession()->login() ;
+            (new Authenticator($this->getSession()))->login() ;
         } catch( AuthenticationError $e ) {
             return false ;
         }

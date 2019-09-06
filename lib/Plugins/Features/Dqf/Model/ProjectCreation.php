@@ -6,6 +6,7 @@ namespace Features\Dqf\Model ;
 
 use Database;
 use Exception;
+use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\MasterProject;
 use Features\Dqf\Service\MasterProjectFiles;
 use Features\Dqf\Service\MasterProjectReviewSettings;
@@ -174,7 +175,7 @@ class ProjectCreation {
 
     protected function _initSession() {
         $this->user = ( new UserModel( $this->project->getOriginalOwner() ) );
-        $this->ownerSession = $this->user->getSession()->login() ;
+        $this->ownerSession = (new Authenticator($this->user->getSession()))->login() ;
     }
 
     protected function _submitSourceSegments() {

@@ -10,6 +10,7 @@ namespace Features\Dqf\Model;
 
 
 use Exception;
+use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\ChildProjectService;
 use Features\Dqf\Service\FileIdMapping;
 use Features\Dqf\Service\ISession;
@@ -77,7 +78,7 @@ abstract class AbstractChildProject {
         }
 
         $this->dqfUser     = new UserModel( ( new Users_UserDao() )->getByUid( $uid ) );
-        $this->userSession = $this->dqfUser->getSession()->login();
+        $this->userSession = (new Authenticator($this->dqfUser->getSession()))->login();
     }
 
     /**
@@ -130,7 +131,7 @@ abstract class AbstractChildProject {
 
     protected function _findRemoteFileId( Files_FileStruct $file ) {
         $projectOwner = new UserModel ( $this->chunk->getProject()->getOriginalOwner()  ) ;
-        $service = new FileIdMapping( $projectOwner->getSession()->login(), $file ) ;
+        $service = new FileIdMapping( (new Authenticator($projectOwner->getSession()))->login(), $file ) ;
 
         return $service->getRemoteId() ;
     }

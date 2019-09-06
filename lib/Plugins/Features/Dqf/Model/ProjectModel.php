@@ -10,6 +10,7 @@ namespace Features\Dqf\Model;
 
 
 use Features\Dqf;
+use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\ChildProjectFiles;
 use Features\Dqf\Service\MasterProjectFiles;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
@@ -20,10 +21,10 @@ class ProjectModel {
     /**
      * @var DqfProjectMapStruct
      */
-    protected $project ;
+    protected $project;
 
     public function __construct( DqfProjectMapStruct $dqfProject ) {
-        $this->project = $dqfProject ;
+        $this->project = $dqfProject;
     }
 
     protected function getMateCatProject() {
@@ -36,16 +37,16 @@ class ProjectModel {
      * for the root proejct.
      */
     public function getUserWithIntermediate() {
-        $intermeiateUid =  $this->getMateCatProject()
-                ->getMetadataValue(Dqf::INTERMEDIATE_USER_METADATA_KEY) ;
+        $intermeiateUid = $this->getMateCatProject()
+                ->getMetadataValue( Dqf::INTERMEDIATE_USER_METADATA_KEY );
 
         if ( $intermeiateUid ) {
             $user = ( new Users_UserDao() )->getByUid( $intermeiateUid );
-        }
-        else {
+        } else {
             $user = $this->getMateCatProject()->getOriginalOwner();
         }
-        return new UserModel( $user ) ;
+
+        return new UserModel( $user );
     }
 
     public function getUserWithIntermediatex() {
@@ -60,32 +61,33 @@ class ProjectModel {
     }
 
     public function getResponseStruct() {
-        return ( new CreateProjectResponseStruct([
+        return ( new CreateProjectResponseStruct( [
                 'dqfId'   => $this->project->dqf_project_id,
                 'dqfUUID' => $this->project->dqf_project_uuid
-        ] ) ) ;
+        ] ) );
     }
 
     public function getOwnerUser() {
-       return new UserModel( $this->getMateCatProject()->getOriginalOwner() ) ;
+        return new UserModel( $this->getMateCatProject()->getOriginalOwner() );
     }
 
     public function isMaster() {
-        return is_null( $this->project->dqf_parent_uuid ) ;
+        return is_null( $this->project->dqf_parent_uuid );
     }
 
     public function getFilesResponseStruct() {
+        $authenticator = new Authenticator( $this->getUser()->getSession() ) ;
+
         if ( $this->isMaster() ) {
             $object = new MasterProjectFiles(
-                    $this->getUser()->getSession()->login(),
+                    $authenticator->login(),
                     $this->getResponseStruct()
-            ) ;
-        }
-        else {
+            );
+        } else {
             $object = new ChildProjectFiles(
-                    $this->getUser()->getSession()->login(),
+                    $authenticator->login(),
                     $this->getResponseStruct()
-            ) ;
+            );
         }
 
         return $object->getFilesResponseStructs();

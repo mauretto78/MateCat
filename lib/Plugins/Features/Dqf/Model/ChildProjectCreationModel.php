@@ -12,6 +12,7 @@ namespace Features\Dqf\Model;
 use Chunks_ChunkStruct;
 use Database;
 use Exception;
+use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\ChildProjectService;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
 use Utils;
@@ -122,7 +123,7 @@ class ChildProjectCreationModel {
     }
 
     protected function createForRevision() {
-        $projectService = new ChildProjectService( $this->user->getSession()->login(), $this->chunk, $this->id_project ) ;
+        $projectService = new ChildProjectService( (new Authenticator($this->user->getSession()))->login(), $this->chunk, $this->id_project ) ;
 
         return $projectService->createRevisionChild(
                 $this->parentProject, $this->files
@@ -134,7 +135,7 @@ class ChildProjectCreationModel {
      * @throws Exception
      */
     protected function createForTranslation() {
-        $projectService = new ChildProjectService( $this->user->getSession()->login(), $this->chunk, $this->id_project ) ;
+        $projectService = new ChildProjectService( (new Authenticator($this->user->getSession()))->login(), $this->chunk, $this->id_project ) ;
 
         return $projectService->createTranslationChild(
                 $this->parentProject, $this->files

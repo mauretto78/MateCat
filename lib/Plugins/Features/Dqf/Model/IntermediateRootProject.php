@@ -34,7 +34,8 @@ class IntermediateRootProject {
      * @return CreateProjectResponseStruct[]
      */
     public function create( ) {
-        $ownerSession = ( new UserModel($this->project->getOriginalOwner() ) )->getSession()->login() ;
+        $authenticator = new Dqf\Service\Authenticator( new UserModel($this->project->getOriginalOwner()->getSession()  ));
+        $ownerSession = $authenticator->login() ;
         $dqfProjectMap = ( new DqfProjectMapDao() )->getMasterByChunk( $this->project->getChunks()[0] );
 
         $mapping              = new ProjectMapping( $ownerSession, $dqfProjectMap ) ;

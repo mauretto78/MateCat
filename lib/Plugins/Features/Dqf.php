@@ -12,6 +12,7 @@ use Features;
 use Features\Dqf\Model\RevisionChildProject;
 use Features\Dqf\Model\TranslationChildProject;
 use Features\Dqf\Model\UserModel;
+use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\Struct\ProjectCreationStruct;
 use Features\Dqf\Utils\Metadata;
 use Features\Dqf\Utils\ProjectMetadata;
@@ -80,7 +81,7 @@ class Dqf extends BaseFeature {
         if ( !empty($metadata['dqf_username']) && !empty($metadata['dqf_password']) )  {
             $session = new Features\Dqf\Service\Session($metadata['dqf_username'], $metadata['dqf_password'] )  ;
             try {
-                $session->login();
+                (new Authenticator($session))->login();
             } catch(AuthenticationError $e) {
                 throw new ValidationError('DQF credentials are not valid') ;
             }
