@@ -78,7 +78,7 @@ abstract class AbstractChildProject {
         }
 
         $this->dqfUser     = new UserModel( ( new Users_UserDao() )->getByUid( $uid ) );
-        $this->userSession = (new Authenticator($this->dqfUser->getSession()))->login();
+        $this->userSession =  $this->dqfUser->getSession();
     }
 
     /**
@@ -131,7 +131,11 @@ abstract class AbstractChildProject {
 
     protected function _findRemoteFileId( Files_FileStruct $file ) {
         $projectOwner = new UserModel ( $this->chunk->getProject()->getOriginalOwner()  ) ;
-        $service = new FileIdMapping( (new Authenticator($projectOwner->getSession()))->login(), $file ) ;
+
+        $dqfEmail    = $projectOwner->getMetadata()['dqf_username'];
+        $dqfPassword = $projectOwner->getMetadata()['dqf_password'];
+
+        $service = new FileIdMapping( (new Authenticator())->login($dqfEmail, $dqfPassword), $file ) ;
 
         return $service->getRemoteId() ;
     }

@@ -123,7 +123,7 @@ class ChildProjectCreationModel {
     }
 
     protected function createForRevision() {
-        $projectService = new ChildProjectService( (new Authenticator($this->user->getSession()))->login(), $this->chunk, $this->id_project ) ;
+        $projectService = new ChildProjectService( $this->user->getSession(), $this->chunk, $this->id_project ) ; // Does it work?
 
         return $projectService->createRevisionChild(
                 $this->parentProject, $this->files
@@ -135,7 +135,7 @@ class ChildProjectCreationModel {
      * @throws Exception
      */
     protected function createForTranslation() {
-        $projectService = new ChildProjectService( (new Authenticator($this->user->getSession()))->login(), $this->chunk, $this->id_project ) ;
+        $projectService = new ChildProjectService( $this->user->getSession(), $this->chunk, $this->id_project ) ; // Does it work?
 
         return $projectService->createTranslationChild(
                 $this->parentProject, $this->files

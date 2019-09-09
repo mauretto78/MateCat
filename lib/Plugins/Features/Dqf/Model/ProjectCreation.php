@@ -175,7 +175,11 @@ class ProjectCreation {
 
     protected function _initSession() {
         $this->user = ( new UserModel( $this->project->getOriginalOwner() ) );
-        $this->ownerSession = (new Authenticator($this->user->getSession()))->login() ;
+
+        $dqfEmail = $this->user->getMetadata()['dqf_username'];
+        $dqfPassword = $this->user->getMetadata()['dqf_password'];
+
+        $this->ownerSession = (new Authenticator())->login($dqfEmail, $dqfPassword) ;
     }
 
     protected function _submitSourceSegments() {

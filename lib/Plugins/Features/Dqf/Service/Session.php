@@ -8,24 +8,15 @@
 
 namespace Features\Dqf\Service;
 
-use API\V2\Exceptions\AuthenticationError;
 use Exception;
 use Features\Dqf\Service\Struct\IBaseStruct;
-use Features\Dqf\Service\Struct\LoginRequestStruct;
-use Features\Dqf\Service\Struct\LoginResponseStruct;
-use Log;
 
 class Session implements ISession {
 
-    protected $email ;
-    protected $password ;
-    protected $sessionId ;
-    protected $expires ;
-
-    public function __construct( $email, $password ) {
-        $this->email    = $email ;
-        $this->password = $password ;
-    }
+    protected $email;
+    protected $password;
+    protected $sessionId;
+    protected $expires;
 
     /**
      * @param mixed $sessionId
@@ -39,10 +30,11 @@ class Session implements ISession {
      * @throws Exception
      */
     public function getSessionId() {
-        if ( is_null($this->sessionId) ) {
-            throw new Exception('sessionId is null, try to login first');
+        if ( is_null( $this->sessionId ) ) {
+            throw new Exception( 'sessionId is null, try to login first' );
         }
-        return $this->sessionId ;
+
+        return $this->sessionId;
     }
 
     /**
@@ -52,8 +44,11 @@ class Session implements ISession {
         $this->expires = $expires;
     }
 
+    /**
+     * @return mixed
+     */
     public function getExpires() {
-        return $this->expires ;
+        return $this->expires;
     }
 
     /**
@@ -84,10 +79,20 @@ class Session implements ISession {
         return $this->password;
     }
 
+    /**
+     * @param $headers
+     *
+     * @return mixed
+     */
     public function getHeaders( $headers ) {
         return $headers;
     }
 
+    /**
+     * @param IBaseStruct $struct
+     *
+     * @return mixed
+     */
     public function filterHeaders( IBaseStruct $struct ) {
         return $struct->getHeaders();
     }

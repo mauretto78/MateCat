@@ -13,8 +13,8 @@ use Features\Dqf\Model\RevisionChildProject;
 use Features\Dqf\Model\TranslationChildProject;
 use Features\Dqf\Model\UserModel;
 use Features\Dqf\Service\Authenticator;
+use Features\Dqf\Service\Session;
 use Features\Dqf\Service\Struct\ProjectCreationStruct;
-use Features\Dqf\Utils\Metadata;
 use Features\Dqf\Utils\ProjectMetadata;
 use Features\ProjectCompletion\CompletionEventStruct;
 use Features\ReviewExtended\Model\ArchivedQualityReportModel;
@@ -30,32 +30,33 @@ use WorkerClient;
 
 class Dqf extends BaseFeature {
 
-    const FEATURE_CODE = 'dqf' ;
-    const INTERMEDIATE_PROJECT_METADATA_KEY = 'dqf_intermediate_project' ;
-    const INTERMEDIATE_USER_METADATA_KEY    = 'dqf_intermediate_user' ;
+    const FEATURE_CODE                      = 'dqf';
+    const INTERMEDIATE_PROJECT_METADATA_KEY = 'dqf_intermediate_project';
+    const INTERMEDIATE_USER_METADATA_KEY    = 'dqf_intermediate_user';
 
-    protected $autoActivateOnProject = false ;
+    protected $autoActivateOnProject = false;
 
     public static $dependencies = [
             Features::PROJECT_COMPLETION,
             Features::REVIEW_EXTENDED,
             Features::TRANSLATION_VERSIONS
-    ] ;
+    ];
 
     /**
      * @var Logger
      */
-    protected static $logger ;
+    protected static $logger;
 
     /**
      * @return \Monolog\Logger
      */
     public static function staticLogger() {
         if ( is_null( self::$logger ) ) {
-            $feature = new BasicFeatureStruct(['feature_code' => self::FEATURE_CODE ]);
-            self::$logger = ( new Dqf($feature) )->getLogger();
+            $feature      = new BasicFeatureStruct( [ 'feature_code' => self::FEATURE_CODE ] );
+            self::$logger = ( new Dqf( $feature ) )->getLogger();
         }
-        return self::$logger ;
+
+        return self::$logger;
     }
 
     /**
@@ -63,30 +64,35 @@ class Dqf extends BaseFeature {
      * @param IController      $controller
      */
     public function decorateTemplate( PHPTALWithAppend $template, IController $controller ) {
-        Features\Dqf\Utils\Functions::commonVarsForDecorator($template);
+        Features\Dqf\Utils\Functions::commonVarsForDecorator( $template );
     }
 
-    public function filterUserMetadataFilters($filters, $metadata) {
-        if ( isset( $metadata['dqf_username'] ) || isset( $metadata['dqf_password'] ) ) {
-            $filters['dqf_username'] = array( 'filter' => FILTER_SANITIZE_STRING ) ;
-            $filters['dqf_password'] = array( 'filter' => FILTER_SANITIZE_STRING ) ;
+    public function filterUserMetadataFilters( $filters, $metadata ) {
+        if ( isset( $metadata[ 'dqf_username' ] ) || isset( $metadata[ 'dqf_password' ] ) ) {
+            $filters[ 'dqf_username' ] = [ 'filter' => FILTER_SANITIZE_STRING ];
+            $filters[ 'dqf_password' ] = [ 'filter' => FILTER_SANITIZE_STRING ];
         }
 
-        return $filters ;
+        return $filters;
     }
 
     public function filterValidateUserMetadata( $metadata, $params ) {
-        $user = $params['user'] ;
+        $user = $params[ 'user' ];
 
-        if ( !empty($metadata['dqf_username']) && !empty($metadata['dqf_password']) )  {
-            $session = new Features\Dqf\Service\Session($metadata['dqf_username'], $metadata['dqf_password'] )  ;
+        if ( !empty( $metadata[ 'dqf_username' ] ) && !empty( $metadata[ 'dqf_password' ] ) ) {
             try {
-                (new Authenticator($session))->login();
-            } catch(AuthenticationError $e) {
-                throw new ValidationError('DQF credentials are not valid') ;
+                $dqfEmail    = $metadata[ 'dqf_username' ];
+                $dqfPassword = $metadata[ 'dqf_password' ];
+
+                /** @var Session $session */
+                $session                      = ( new Authenticator() )->login( $dqfEmail, $dqfPassword );
+                $metadata[ 'dqf_session_id' ] = $session->getSessionId();
+            } catch ( AuthenticationError $e ) {
+                throw new ValidationError( 'DQF credentials are not valid' );
             }
         }
-        return $metadata ;
+
+        return $metadata;
     }
 
     /**
@@ -95,7 +101,7 @@ class Dqf extends BaseFeature {
      * @return array
      */
     public function filterCreateProjectInputFilters( $inputFilter ) {
-        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() ) ;
+        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() );
     }
 
     /**
@@ -105,12 +111,12 @@ class Dqf extends BaseFeature {
      * @return array
      */
     public function createProjectAssignInputMetadata( $metadata, $options ) {
-        $options = Utils::ensure_keys( $options, array('input'));
+        $options = Utils::ensure_keys( $options, [ 'input' ] );
 
-        $my_metadata = array_intersect_key( $options['input'], array_flip( ProjectMetadata::$keys ) ) ;
+        $my_metadata = array_intersect_key( $options[ 'input' ], array_flip( ProjectMetadata::$keys ) );
         $my_metadata = array_filter( $my_metadata ); // <-- remove all `empty` array elements
 
-        return  array_merge( $my_metadata, $metadata ) ;
+        return array_merge( $my_metadata, $metadata );
     }
 
     /**
@@ -121,8 +127,8 @@ class Dqf extends BaseFeature {
     public function project_completion_event_saved( Chunks_ChunkStruct $chunk, CompletionEventStruct $params, $lastId ) {
         // at this point we have to enqueue delivery to DQF of the translated or reviewed segments
         // TODO: put this in a queue for background processing
-        if ( ! $params->is_review ) {
-            $translationChildProject = new TranslationChildProject( $chunk ) ;
+        if ( !$params->is_review ) {
+            $translationChildProject = new TranslationChildProject( $chunk );
             $translationChildProject->createRemoteProjectsAndSubmit();
             $translationChildProject->setCompleted();
         }
@@ -133,17 +139,17 @@ class Dqf extends BaseFeature {
         $revisionChildModel = new RevisionChildProject(
                 $archivedQRModel->getChunk(),
                 $archivedQRModel->getSavedRecord()->version
-        ) ;
+        );
 
-        $revisionChildModel->createRemoteProjectsAndSubmit() ;
+        $revisionChildModel->createRemoteProjectsAndSubmit();
         $revisionChildModel->setCompleted();
     }
 
-    public function filterCreationStatus($result, Projects_ProjectStruct $project) {
-        $master_project_created = $project->getMetadataValue('dqf_master_project_creation_completed_at');
+    public function filterCreationStatus( $result, Projects_ProjectStruct $project ) {
+        $master_project_created = $project->getMetadataValue( 'dqf_master_project_creation_completed_at' );
 
         if ( $master_project_created ) {
-            return $result ;
+            return $result;
         }
 
         return null;
@@ -158,30 +164,31 @@ class Dqf extends BaseFeature {
      */
     public function filterCreateProjectFeatures( $features, $controller ) {
         if ( isset( $controller->postInput[ 'dqf' ] ) && !!$controller->postInput[ 'dqf' ] ) {
-            $validationErrors = ProjectMetadata::getValiationErrors( $controller->postInput ) ;
+            $validationErrors = ProjectMetadata::getValiationErrors( $controller->postInput );
 
             if ( !empty( $validationErrors ) ) {
-                throw new ValidationError('input validation failed: ' . implode(', ', $validationErrors ) ) ;
+                throw new ValidationError( 'input validation failed: ' . implode( ', ', $validationErrors ) );
             }
 
-            $features[ Features::DQF ] = new BasicFeatureStruct([ 'feature_code' => Features::DQF ]);
+            $features[ Features::DQF ] = new BasicFeatureStruct( [ 'feature_code' => Features::DQF ] );
         }
-        return $features ;
+
+        return $features;
     }
 
     public function filterNewProjectInputFilters( $inputFilter ) {
-        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() ) ;
+        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() );
     }
 
     /**
      * @param $projectStructure
      */
     public function postProjectCommit( $projectStructure ) {
-        $struct = new ProjectCreationStruct([
-            'id_project'          => $projectStructure['id_project'],
-            'source_language'     => $projectStructure['source_language'],
-            'file_segments_count' => $projectStructure['file_segments_count']
-        ]);
+        $struct = new ProjectCreationStruct( [
+                'id_project'          => $projectStructure[ 'id_project' ],
+                'source_language'     => $projectStructure[ 'source_language' ],
+                'file_segments_count' => $projectStructure[ 'file_segments_count' ]
+        ] );
 
         WorkerClient::init( new AMQHandler() );
         WorkerClient::enqueue( 'DQF', '\Features\Dqf\Worker\CreateProjectWorker', $struct->toArray() );
@@ -200,9 +207,10 @@ class Dqf extends BaseFeature {
      *
      * @return bool
      */
-    public function filterJobCompletable($value, Chunks_ChunkStruct $chunk, Users_UserStruct $user, $isRevision) {
-        $authModel = new Features\Dqf\Model\CatAuthorizationModel($chunk, $isRevision );
-        return $value && $authModel->isUserAuthorized( $user ) ;
+    public function filterJobCompletable( $value, Chunks_ChunkStruct $chunk, Users_UserStruct $user, $isRevision ) {
+        $authModel = new Features\Dqf\Model\CatAuthorizationModel( $chunk, $isRevision );
+
+        return $value && $authModel->isUserAuthorized( $user );
     }
 
     /**
@@ -218,54 +226,60 @@ class Dqf extends BaseFeature {
         if ( isset( $metadata[ self::FEATURE_CODE ] ) && $metadata[ self::FEATURE_CODE ] ) {
             $dependencies = array_merge( $dependencies, static::getDependencies() );
         }
-        return $dependencies ;
+
+        return $dependencies;
     }
 
     public function validateProjectCreation( $projectStructure ) {
 
         if ( count( $projectStructure[ 'target_language' ] ) > 1 ) {
-            $multilang_error = [ 'code' => -1000, 'message' => 'Cannot create multilanguage projects when DQF option is enabled' ];
-            $projectStructure['result']['errors'][] = $multilang_error ;
-            return ;
+            $multilang_error                            = [ 'code' => -1000, 'message' => 'Cannot create multilanguage projects when DQF option is enabled' ];
+            $projectStructure[ 'result' ][ 'errors' ][] = $multilang_error;
+
+            return;
         }
 
-        if ( $projectStructure['metadata'] ) {
+        if ( $projectStructure[ 'metadata' ] ) {
             // TODO: other incoming DQF related options to be validated
         }
 
         $error_user_not_set = [ 'code' => -1000, 'message' => 'DQF user is not set' ];
 
-        if ( empty( $projectStructure['id_customer'] ) ) {
-            $projectStructure['result']['errors'][] = $error_user_not_set  ;
-            return ;
+        if ( empty( $projectStructure[ 'id_customer' ] ) ) {
+            $projectStructure[ 'result' ][ 'errors' ][] = $error_user_not_set;
+
+            return;
         }
 
-        $user = ( new Users_UserDao() )->setCacheTTL(3600)->getByEmail( $projectStructure['id_customer'] ) ;
+        $user = ( new Users_UserDao() )->setCacheTTL( 3600 )->getByEmail( $projectStructure[ 'id_customer' ] );
 
         if ( !$user ) {
-            $projectStructure['result']['errors'][] = $error_user_not_set  ;
-            return ;
+            $projectStructure[ 'result' ][ 'errors' ][] = $error_user_not_set;
+
+            return;
         }
 
-        $dqfUser = new UserModel( $user ) ;
+        $dqfUser = new UserModel( $user );
 
-        if ( ! $dqfUser->hasCredentials() ) {
-            $projectStructure['result']['errors'][] = $error_user_not_set  ;
-            return ;
+        if ( !$dqfUser->hasCredentials() ) {
+            $projectStructure[ 'result' ][ 'errors' ][] = $error_user_not_set;
+
+            return;
         }
 
         $error_on_remote_login = [ 'code' => -1000, 'message' => 'DQF credentials are not correct.' ];
-        if ( ! $dqfUser->validCredentials() ) {
-            $projectStructure['result']['errors'][] = $error_on_remote_login ;
-            return ;
+        if ( !$dqfUser->validCredentials() ) {
+            $projectStructure[ 'result' ][ 'errors' ][] = $error_on_remote_login;
+
+            return;
         }
 
         // At this point we are sure ReviewExtended::loadAndValidateModelFromJsonFile was called already
         // @see FeatureSet::getSortedFeatures
 
-        if ( $projectStructure['features']['review_extended']['__meta']['qa_model'] ) {
+        if ( $projectStructure[ 'features' ][ 'review_extended' ][ '__meta' ][ 'qa_model' ] ) {
             // override QA model
-            $projectStructure['features']['review_extended']['__meta']['qa_model'] = json_decode(
+            $projectStructure[ 'features' ][ 'review_extended' ][ '__meta' ][ 'qa_model' ] = json_decode(
                     file_get_contents( INIT::$ROOT . '/inc/dqf/qa_model.json' ), true
             );
         }

@@ -197,7 +197,11 @@ class ChildProjectService {
      */
     protected function getSessionForFiles( UserModel $assignee = null ) {
         if ( $assignee ) {
-            return (new Authenticator($assignee->getSession()))->login();
+
+            $dqfEmail = $assignee->getMetadata()['dqf_username'];
+            $dqfPassword = $assignee->getMetadata()['dqf_password'];
+
+            return (new Authenticator())->login($dqfEmail, $dqfPassword);
         }
         else {
             return $this->session ;

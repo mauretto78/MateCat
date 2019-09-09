@@ -18,21 +18,21 @@ use Users_UserStruct;
 
 class UserModel {
 
-    protected $user ;
-    protected $metadata ;
+    protected $user;
+    protected $metadata;
 
     /**
      * @var ISession
      */
-    protected $session ;
+    protected $session;
 
     public function __construct( Users_UserStruct $user ) {
 
         if ( is_null( $user ) ) {
-            throw  new Exception('User is null') ;
+            throw  new Exception( 'User is null' );
         }
 
-        $this->user = $user ;
+        $this->user     = $user;
         $this->metadata = $this->user->getMetadataAsKeyValue();
     }
 
@@ -40,28 +40,28 @@ class UserModel {
      * @return GenericSession|ISession|Session
      */
     public function getSession() {
-        if ( ! isset( $this->session ) ) {
+        if ( !isset( $this->session ) ) {
             if ( $this->hasCredentials() ) {
-                $this->session = new Session( $this->metadata['dqf_username'], $this->metadata['dqf_password'] ) ;
-            }
-            else {
-                $this->session = new GenericSession( $this->user->email ) ;
+                $this->session = new Session( $this->metadata[ 'dqf_username' ], $this->metadata[ 'dqf_password' ] );
+            } else {
+                $this->session = new GenericSession( $this->user->email );
             }
         }
-        return $this->session ;
+
+        return $this->session;
     }
 
     public function getDqfUsernameOrMateCatEmail() {
-        return is_null( $this->metadata['dqf_username'] ) ?
+        return is_null( $this->metadata[ 'dqf_username' ] ) ?
                 $this->getMateCatUser()->email :
-                $this->metadata['dqf_username'] ;
+                $this->metadata[ 'dqf_username' ];
     }
 
     /**
      * @return bool
      */
     public function hasCredentials() {
-        return ( isset( $this->metadata['dqf_username'] ) && isset( $this->metadata['dqf_password'] ) ) ;
+        return ( isset( $this->metadata[ 'dqf_username' ] ) && isset( $this->metadata[ 'dqf_password' ] ) );
     }
 
     /**
@@ -69,17 +69,28 @@ class UserModel {
      */
     public function validCredentials() {
         try {
-            (new Authenticator($this->getSession()))->login() ;
-        } catch( AuthenticationError $e ) {
-            return false ;
+            $dqfEmail = $this->metadata[ 'dqf_username' ];
+            $dqfPassword = $this->metadata[ 'dqf_password' ];
+
+            ( new Authenticator() )->login( $dqfEmail, $dqfPassword );
+        } catch ( AuthenticationError $e ) {
+            return false;
         }
-        return true ;
+
+        return true;
     }
 
     /**
      * @return Users_UserStruct
      */
     public function getMateCatUser() {
-        return $this->user ;
+        return $this->user;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMetadata() {
+        return $this->metadata;
     }
 }

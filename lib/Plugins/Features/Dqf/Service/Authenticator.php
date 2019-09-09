@@ -6,6 +6,7 @@ use API\V2\Exceptions\AuthenticationError;
 use Features\Dqf\Service\Struct\LoginRequestStruct;
 use Features\Dqf\Service\Struct\LoginResponseStruct;
 use Features\Dqf\Service\Struct\LogoutRequestStruct;
+use Features\Dqf\Utils\UserMetadata;
 
 class Authenticator {
 
@@ -24,19 +25,22 @@ class Authenticator {
      *
      * @param Session $session
      */
-    public function __construct( Session $session ) {
-        $this->session = $session;
+    public function __construct() {
+        $this->session = new Session();
         $this->client = new Client();
     }
 
     /**
+     * @param string $email
+     * @param string $password
+     *
      * @return Session
      * @throws AuthenticationError
      */
-    public function login() {
+    public function login($email, $password) {
         $struct           = new LoginRequestStruct() ;
-        $struct->email    = AuthenticatorDataEncryptor::encrypt( $this->session->getEmail() );
-        $struct->password = AuthenticatorDataEncryptor::encrypt( $this->session->getPassword() );
+        $struct->email    = AuthenticatorDataEncryptor::encrypt( $email );
+        $struct->password = AuthenticatorDataEncryptor::encrypt( $password );
 
         $request = $this->client->createResource( '/login', 'post', [
                 'formData' => $struct->getParams(),
@@ -46,7 +50,6 @@ class Authenticator {
         $this->client->curl()->multiExec();
 
         if ( $this->client->curl()->hasError( $request ) ) {
-            // TODO: change this class to a DQF specific Authentication Error
             throw new AuthenticationError( 'Login failed with message: ' . $this->client->curl()->getSingleContent( $request ) );
         }
 
@@ -62,13 +65,16 @@ class Authenticator {
     }
 
     /**
+     * @param null $email
+     * @param null $sessionId
+     *
      * @return Session
      * @throws AuthenticationError
      */
-    public function logout() {
+    public function logout($email = null, $sessionId = null) {
         $struct           = new LogoutRequestStruct();
-        $struct->email    = AuthenticatorDataEncryptor::encrypt( $this->session->getEmail() );
-        $struct->sessionId =  $this->session->getSessionId();
+        $struct->email    = AuthenticatorDataEncryptor::encrypt( isset($email) ? $email : $this->session->getEmail() );
+        $struct->sessionId = isset($sessionId) ? $sessionId : $this->session->getSessionId();
 
         $request = $this->client->createResource( '/logout', 'post', [
                 'formData' => $struct->getParams(),
@@ -78,10 +84,11 @@ class Authenticator {
         $this->client->curl()->multiExec();
 
         if ( $this->client->curl()->hasError( $request ) ) {
-            // TODO: change this class to a DQF specific Authentication Error
             throw new AuthenticationError( 'Logout failed with message: ' . $this->client->curl()->getSingleContent( $request ) );
         }
 
+        \Log::doJsonLog( " Logging out with success" );
+        
         $this->session->setSessionId(null);
         $this->session->setEmail(null);
         $this->session->setPassword(null);

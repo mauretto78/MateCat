@@ -76,16 +76,19 @@ class ProjectModel {
     }
 
     public function getFilesResponseStruct() {
-        $authenticator = new Authenticator( $this->getUser()->getSession() ) ;
+
+        $dqfEmail    = $this->getUser()->getMetadata()['dqf_username'];
+        $dqfPassword = $this->getUser()->getMetadata()['dqf_password'];
+        $authenticator = new Authenticator();
 
         if ( $this->isMaster() ) {
             $object = new MasterProjectFiles(
-                    $authenticator->login(),
+                    $authenticator->login($dqfEmail, $dqfPassword),
                     $this->getResponseStruct()
             );
         } else {
             $object = new ChildProjectFiles(
-                    $authenticator->login(),
+                    $authenticator->login($dqfEmail, $dqfPassword),
                     $this->getResponseStruct()
             );
         }
