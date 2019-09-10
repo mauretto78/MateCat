@@ -68,6 +68,9 @@ abstract class AbstractChildProject {
         }
     }
 
+    /**
+     * @throws \API\V2\Exceptions\AuthenticationError
+     */
     protected function _initUserAndSession() {
         $uid = ( new MetadataDao() )
                 ->get( $this->chunk->id, $this->chunk->password, $this->_getMetadataUserKey() )
@@ -78,7 +81,10 @@ abstract class AbstractChildProject {
         }
 
         $this->dqfUser     = new UserModel( ( new Users_UserDao() )->getByUid( $uid ) );
-        $this->userSession =  $this->dqfUser->getSession();
+        $dqfEmail    = $this->dqfUser->getMetadata()['dqf_username'];
+        $dqfPassword = $this->dqfUser->getMetadata()['dqf_password'];
+
+        $this->userSession = (new Authenticator())->login($dqfEmail, $dqfPassword);
     }
 
     /**
@@ -129,13 +135,20 @@ abstract class AbstractChildProject {
 
     abstract protected function _submitData() ;
 
+    /**
+     * @param Files_FileStruct $file
+     *
+     * @return mixed
+     * @throws Exception
+     */
     protected function _findRemoteFileId( Files_FileStruct $file ) {
-        $projectOwner = new UserModel ( $this->chunk->getProject()->getOriginalOwner()  ) ;
-
-        $dqfEmail    = $projectOwner->getMetadata()['dqf_username'];
-        $dqfPassword = $projectOwner->getMetadata()['dqf_password'];
-
-        $service = new FileIdMapping( (new Authenticator())->login($dqfEmail, $dqfPassword), $file ) ;
+//        $projectOwner = new UserModel ( $this->chunk->getProject()->getOriginalOwner()  ) ;
+////
+////        $dqfEmail    = $projectOwner->getMetadata()['dqf_username'];
+////        $dqfPassword = $projectOwner->getMetadata()['dqf_password'];
+////
+////        $service = new FileIdMapping( (new Authenticator())->login($dqfEmail, $dqfPassword), $file ) ;
+        $service = new FileIdMapping( $this->userSession, $file ) ;
 
         return $service->getRemoteId() ;
     }
