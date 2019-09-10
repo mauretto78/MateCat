@@ -32,7 +32,7 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
 
     public function getExtendedTranslationByFile( $file, $since, $min, $max ) {
 
-        Log::doJsonLog('getExtendedTranslationByFile', func_get_args() ) ;
+        //Log::doJsonLog('getExtendedTranslationByFile', func_get_args() ) ;
 
         $sql = "SELECT
 

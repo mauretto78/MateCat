@@ -7,6 +7,8 @@ use Chunks_ChunkStruct;
 use DataAccess\LoudArray;
 use Exception;
 use Features\Dqf\Model\CachedAttributes\SegmentOrigin;
+use Features\Dqf\Service\Authenticator;
+use Features\Dqf\Service\Session;
 use Features\Dqf\Service\Struct\Request\ChildProjectTranslationRequestStruct;
 use Features\Dqf\Service\TranslationBatchService;
 use Features\Dqf\Utils\Functions;
@@ -133,8 +135,11 @@ class TranslationChildProject extends AbstractChildProject {
                 $segmentParisChunks = array_chunk( $segmentPairs, self::SEGMENT_PAIRS_CHUNK_SIZE );
 
                 foreach( $segmentParisChunks as $segmentParisChunk ) {
+
+                    $session = (new Authenticator())->login($this->userSession->getEmail(), $this->userSession->getPassword());
+
                     $requestStruct                 = new ChildProjectTranslationRequestStruct();
-                    $requestStruct->sessionId      = $this->userSession->getSessionId();
+                    $requestStruct->sessionId      = $session->getSessionId();
                     $requestStruct->fileId         = $remoteFileId ;
                     $requestStruct->projectKey     = $dqfChildProject->dqf_project_uuid ;
                     $requestStruct->projectId      = $dqfChildProject->dqf_project_id ;
