@@ -12,11 +12,8 @@ use API\App\AbstractStatefulKleinController;
 use Chunks_ChunkDao;
 use Exceptions\NotFoundException;
 use Features\Dqf\Model\CatAuthorizationModel;
-use Features\Dqf\Model\UserModel;
-use Features\Dqf\Service\Authenticator;
-use Features\Dqf\Utils\UserMetadata;
+use Features\Dqf\Service\SessionProvider;
 use LQA\ChunkReviewDao;
-use Users\MetadataDao;
 
 class GenericController extends AbstractStatefulKleinController {
 
@@ -32,15 +29,7 @@ class GenericController extends AbstractStatefulKleinController {
      * @throws \Exception
      */
     public function clearCredentials() {
-//        $user =  $this->getUser() ;
-//        $dao = new MetadataDao();
-//
-//        $dqfSession  = $dao->get( $user->getUid(), UserMetadata::DQF_SESSION_ID )->value;
-//        $dqfEmail  = $dao->get( $user->getUid(), UserMetadata::DQF_USERNAME_KEY )->value;
-//
-//        $logout = ( new Authenticator() )->logout($dqfEmail, $dqfSession);
-
-        UserMetadata::clearCredentials( $this->getUser() );
+        SessionProvider::destroy( $this->getUser()->getUid() );
         $this->response->code( 200 );
     }
 

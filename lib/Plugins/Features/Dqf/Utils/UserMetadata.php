@@ -17,9 +17,15 @@ class UserMetadata {
     const DQF_USERNAME_KEY = 'dqf_username';
     const DQF_PASSWORD_KEY = 'dqf_password';
     const DQF_SESSION_ID   = 'dqf_session_id';
+    const DQF_SESSION_EXPIRES   = 'dqf_session_expires';
 
     public static function extractCredentials( $user_metadata ) {
-        return [ $user_metadata[ self::DQF_USERNAME_KEY ], $user_metadata[ self::DQF_PASSWORD_KEY ], $user_metadata[ self::DQF_SESSION_ID ] ];
+        return [
+                $user_metadata[ self::DQF_USERNAME_KEY ],
+                $user_metadata[ self::DQF_PASSWORD_KEY ],
+                $user_metadata[ self::DQF_SESSION_ID ],
+                $user_metadata[ self::DQF_SESSION_EXPIRES ],
+        ];
     }
 
     public static function clearCredentials( Users_UserStruct $user ) {
@@ -27,6 +33,7 @@ class UserMetadata {
         $dao->delete( $user->uid, self::DQF_USERNAME_KEY );
         $dao->delete( $user->uid, self::DQF_PASSWORD_KEY );
         $dao->delete( $user->uid, self::DQF_SESSION_ID );
+        $dao->delete( $user->uid, self::DQF_SESSION_EXPIRES );
     }
 
 

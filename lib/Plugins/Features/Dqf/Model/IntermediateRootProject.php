@@ -14,6 +14,7 @@ use Features\Dqf\Service\MasterProjectFiles;
 use Features\Dqf\Service\ProjectMapping;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
 use Projects_ProjectStruct;
+use Features\Dqf\Service\SessionProvider;
 
 class IntermediateRootProject {
 
@@ -34,11 +35,8 @@ class IntermediateRootProject {
      * @return CreateProjectResponseStruct[]
      */
     public function create( ) {
-        $userModel = (new UserModel($this->project->getOriginalOwner()))->getSession();
-        $dqfEmail    = $userModel->getMetadata()['dqf_username'];
-        $dqfPassword = $userModel->getMetadata()['dqf_password'];
 
-        $ownerSession = (new Dqf\Service\Authenticator())->login($dqfEmail, $dqfPassword) ;
+        $ownerSession = SessionProvider::getByUserId($this->project->getOriginalOwner()->getUid());
         $dqfProjectMap = ( new DqfProjectMapDao() )->getMasterByChunk( $this->project->getChunks()[0] );
 
         $mapping              = new ProjectMapping( $ownerSession, $dqfProjectMap ) ;

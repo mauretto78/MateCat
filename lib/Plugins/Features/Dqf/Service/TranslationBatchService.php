@@ -15,14 +15,7 @@ use Log;
 class TranslationBatchService extends AbstractService {
 
     protected $resources = [] ;
-    protected $client;
     protected $structs = []  ;
-
-    public function __construct( ISession $session ) {
-        $this->session = $session ;
-        $this->client = new Client();
-        $this->client->setSession( $this->session );
-    }
 
     public function addRequestStruct( ChildProjectTranslationRequestStruct $requestStruct ) {
         $this->structs[] = $requestStruct ;

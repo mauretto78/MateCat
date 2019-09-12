@@ -15,6 +15,7 @@ use Features\Dqf\Service\GenericSession;
 use Features\Dqf\Service\ISession;
 use Features\Dqf\Service\Session;
 use Users_UserStruct;
+use Features\Dqf\Service\SessionProvider;
 
 class UserModel {
 
@@ -69,10 +70,7 @@ class UserModel {
      */
     public function validCredentials() {
         try {
-            $dqfEmail = $this->metadata[ 'dqf_username' ];
-            $dqfPassword = $this->metadata[ 'dqf_password' ];
-
-            ( new Authenticator() )->login( $dqfEmail, $dqfPassword );
+            SessionProvider::getByUserId($this->user->getUid());
         } catch ( AuthenticationError $e ) {
             return false;
         }

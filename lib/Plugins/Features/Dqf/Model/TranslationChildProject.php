@@ -216,9 +216,9 @@ class TranslationChildProject extends AbstractChildProject {
 
         if ( $prevEvent ) {
             return $prevEvent[ 'create_date' ];
-        } else {
-            return $this->chunk->getProject()->create_date;
         }
+
+        return $this->chunk->getProject()->create_date;
     }
 
 }

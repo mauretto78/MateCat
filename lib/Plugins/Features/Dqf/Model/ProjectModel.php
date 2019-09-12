@@ -1,18 +1,11 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fregini
- * Date: 01/09/2017
- * Time: 12:05
- */
 
 namespace Features\Dqf\Model;
 
-
 use Features\Dqf;
-use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\ChildProjectFiles;
 use Features\Dqf\Service\MasterProjectFiles;
+use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
 use Users_UserDao;
 
@@ -60,6 +53,13 @@ class ProjectModel {
         return $this->project->getUser();
     }
 
+    /**
+     * @return mixed
+     */
+    public function getOriginalOwnerUid() {
+        return $this->getMateCatProject()->getOriginalOwner()->getUid();
+    }
+
     public function getResponseStruct() {
         return ( new CreateProjectResponseStruct( [
                 'dqfId'   => $this->project->dqf_project_id,
@@ -77,18 +77,15 @@ class ProjectModel {
 
     public function getFilesResponseStruct() {
 
-        $dqfEmail    = $this->getUser()->getMetadata()['dqf_username'];
-        $dqfPassword = $this->getUser()->getMetadata()['dqf_password'];
-        $authenticator = new Authenticator();
 
         if ( $this->isMaster() ) {
             $object = new MasterProjectFiles(
-                    $authenticator->login($dqfEmail, $dqfPassword),
+                    SessionProvider::getByUserId( $this->getOriginalOwnerUid() ),
                     $this->getResponseStruct()
             );
         } else {
             $object = new ChildProjectFiles(
-                    $authenticator->login($dqfEmail, $dqfPassword),
+                    SessionProvider::getByUserId( $this->getOriginalOwnerUid() ),
                     $this->getResponseStruct()
             );
         }

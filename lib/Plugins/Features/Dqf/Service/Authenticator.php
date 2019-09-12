@@ -7,6 +7,7 @@ use Features\Dqf\Service\Struct\LoginRequestStruct;
 use Features\Dqf\Service\Struct\LoginResponseStruct;
 use Features\Dqf\Service\Struct\LogoutRequestStruct;
 use Features\Dqf\Utils\UserMetadata;
+use Users\MetadataDao;
 
 class Authenticator {
 
@@ -23,10 +24,10 @@ class Authenticator {
     /**
      * Authenticator constructor.
      *
-     * @param Session $session
+     * @param ISession|null $session
      */
-    public function __construct() {
-        $this->session = new Session();
+    public function __construct(ISession $session = null) {
+        $this->session = (isset($session)) ? $session : new Session();
         $this->client = new Client();
     }
 
@@ -58,8 +59,13 @@ class Authenticator {
 
         \Log::doJsonLog( " SessionId " . $response->sessionId );
 
+        $metaDao = new MetadataDao();
+        $uid = $metaDao->getUidByDqfUsernameAndPassword($email, $password);
+        $metaDao->set($uid, 'dqf_session_id', $response->sessionId);
+        $metaDao->set($uid, 'dqf_session_expires', (int)(strtotime("now") + (int)$response->expires) );
+
         $this->session->setSessionId( $response->sessionId );
-        $this->session->setExpires( $response->expires );
+        $this->session->setExpires( (int)(strtotime("now") + (int)$response->expires) );
 
         return $this->session;
     }
@@ -71,10 +77,10 @@ class Authenticator {
      * @return Session
      * @throws AuthenticationError
      */
-    public function logout($email = null, $sessionId = null) {
+    public function logout() {
         $struct           = new LogoutRequestStruct();
-        $struct->email    = AuthenticatorDataEncryptor::encrypt( isset($email) ? $email : $this->session->getEmail() );
-        $struct->sessionId = isset($sessionId) ? $sessionId : $this->session->getSessionId();
+        $struct->email    = AuthenticatorDataEncryptor::encrypt( $this->session->getEmail() );
+        $struct->sessionId = $this->session->getSessionId();
 
         $request = $this->client->createResource( '/logout', 'post', [
                 'formData' => $struct->getParams(),

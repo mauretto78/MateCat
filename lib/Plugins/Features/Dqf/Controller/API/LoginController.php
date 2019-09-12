@@ -12,6 +12,7 @@ namespace Features\Dqf\Controller\API;
 use API\V2\KleinController;
 use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\Session;
+use Features\Dqf\Service\SessionProvider;
 
 class LoginController extends KleinController {
 
@@ -24,7 +25,7 @@ class LoginController extends KleinController {
         $username = 'fabrizio@translated.net';
         $password = 'fabrizio@translated.net';
 
-        $session = (new Authenticator())->login($username, $password);
+        $session = SessionProvider::getByCredentials($username, $password);
 
         $this->response->code(200);
         $this->response->json(['session' => [

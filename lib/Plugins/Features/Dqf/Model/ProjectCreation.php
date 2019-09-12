@@ -1,17 +1,15 @@
 <?php
 
-
-
-namespace Features\Dqf\Model ;
+namespace Features\Dqf\Model;
 
 use Database;
 use Exception;
-use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\MasterProject;
 use Features\Dqf\Service\MasterProjectFiles;
 use Features\Dqf\Service\MasterProjectReviewSettings;
 use Features\Dqf\Service\MasterProjectSegmentsBatch;
 use Features\Dqf\Service\Session;
+use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
 use Features\Dqf\Service\Struct\ProjectCreationStruct;
 use Features\Dqf\Service\Struct\ProjectRequestStruct;
@@ -24,7 +22,6 @@ use Projects_ProjectDao;
 use Projects_ProjectStruct;
 use Utils;
 
-
 class ProjectCreation {
 
     protected $intermediateRootProjectRequired = false;
@@ -32,55 +29,55 @@ class ProjectCreation {
     /**
      * @var Projects_ProjectStruct
      */
-    protected $project ;
+    protected $project;
 
-    protected $current_state ;
+    protected $current_state;
 
-    protected $logger ;
+    protected $logger;
 
     /**
      * @var Session
      */
-    protected $ownerSession ;
+    protected $ownerSession;
 
     /**
      * @var CreateProjectResponseStruct
      */
-    protected $remoteMasterProject ;
+    protected $remoteMasterProject;
 
     /**
      * @var ProjectCreationStruct
      */
-    protected $inputStruct ;
+    protected $inputStruct;
 
     /**
      * @var MaserFileCreationResponseStruct[]
      */
-    protected $remoteFiles ;
+    protected $remoteFiles;
 
     /**
      * @var array
      */
-    protected $segmentsBatchResult ;
+    protected $segmentsBatchResult;
 
     /**
      * @var ReviewSettingsResponseStruct ;
      */
-    protected $reviewSettings ;
+    protected $reviewSettings;
 
     /** @var  UserModel */
-    protected $user ;
+    protected $user;
 
     public function __construct( ProjectCreationStruct $struct ) {
-        $this->inputStruct = $struct  ;
-        $this->project = Projects_ProjectDao::findById( $struct->id_project );
+        $this->inputStruct = $struct;
+        $this->project     = Projects_ProjectDao::findById( $struct->id_project );
 
         // find  back the qa_model file from json?
         // no the quality model must be found trom
     }
 
-    public function setLogger($logger) {
-        $this->logger = $logger ;
+    public function setLogger( $logger ) {
+        $this->logger = $logger;
     }
 
     public function process() {
@@ -93,7 +90,7 @@ class ProjectCreation {
     }
 
     protected function _saveCompletion() {
-        $this->project->setMetadata('dqf_master_project_creation_completed_at', time() );
+        $this->project->setMetadata( 'dqf_master_project_creation_completed_at', time() );
     }
 
     protected function _createProject() {
@@ -103,21 +100,21 @@ class ProjectCreation {
          * Generating id_project from a sequence here allows for retrying this step if anything fails.
          * Otherwise we would have a conflict if the master project is created but something goes wrong during later on.
          */
-        $id_project = Database::obtain()->nextSequence('id_dqf_project')[ 0 ] ;
+        $id_project = Database::obtain()->nextSequence( 'id_dqf_project' )[ 0 ];
 
-        $params = new ProjectRequestStruct(array_merge( array(
+        $params = new ProjectRequestStruct( array_merge( [
                 'name'               => $this->project->name,
                 'sourceLanguageCode' => $this->inputStruct->source_language,
                 'clientId'           => Functions::scopeId( $id_project ),
                 'templateName'       => '',
                 'tmsProjectKey'      => ''
-        ), $projectInputParams ) );
+        ], $projectInputParams ) );
 
-        $project = new MasterProject($this->ownerSession);
-        $this->remoteMasterProject = $project->create( $params ) ;
+        $project                   = new MasterProject( $this->ownerSession );
+        $this->remoteMasterProject = $project->create( $params );
 
-        foreach( $this->project->getChunks() as $chunk ) {
-            $struct = new DqfProjectMapStruct([
+        foreach ( $this->project->getChunks() as $chunk ) {
+            $struct = new DqfProjectMapStruct( [
                     'id'               => $id_project,
                     'id_job'           => $chunk->id,
                     'password'         => $chunk->password,
@@ -128,20 +125,20 @@ class ProjectCreation {
                     'create_date'      => Utils::mysqlTimestamp( time() ),
                     'project_type'     => 'master',
                     'uid'              => $this->project->getOriginalOwner()->uid
-            ]);
+            ] );
 
-            DqfProjectMapDao::insertStructWithAutoIncrements( $struct ) ;
+            DqfProjectMapDao::insertStructWithAutoIncrements( $struct );
         }
     }
 
     protected function _submitProjectFiles() {
-        $files = Files_FileDao::getByProjectId($this->project->id) ;
+        $files       = Files_FileDao::getByProjectId( $this->project->id );
         $remoteFiles = new MasterProjectFiles(
                 $this->ownerSession,
                 $this->remoteMasterProject
         );
 
-        foreach( $files as $file ) {
+        foreach ( $files as $file ) {
             $segmentsCount = $this->inputStruct->file_segments_count[ $file->id ];
             $remoteFiles->setFile( $file, $segmentsCount );
         }
@@ -152,10 +149,10 @@ class ProjectCreation {
     }
 
     protected function _submitReviewSettings() {
-        $dqfQaModel = new DqfQualityModel( $this->project ) ;
-        $request = new MasterProjectReviewSettings( $this->ownerSession, $this->remoteMasterProject );
+        $dqfQaModel = new DqfQualityModel( $this->project );
+        $request    = new MasterProjectReviewSettings( $this->ownerSession, $this->remoteMasterProject );
 
-        $struct = $dqfQaModel->getReviewSettings() ;
+        $struct = $dqfQaModel->getReviewSettings();
 
         $this->reviewSettings = $request->create( $struct );
 
@@ -163,23 +160,20 @@ class ProjectCreation {
          * This check was introduced due to weird errors about missing reviewErrors on
          */
         if ( !empty( $this->reviewSettings->dqfId ) ) {
-            $this->project->setMetadata('dqf_review_settings_id', $this->reviewSettings->dqfId ) ;
-        }
-
-        else {
-            throw new Exception('Dqf review settings where not set. ' .
+            $this->project->setMetadata( 'dqf_review_settings_id', $this->reviewSettings->dqfId );
+        } else {
+            throw new Exception( 'Dqf review settings where not set. ' .
                     var_export( $this->reviewSettings->toArray(), true )
-            ) ;
+            );
         }
     }
 
+    /**
+     * @throws \API\V2\Exceptions\AuthenticationError
+     */
     protected function _initSession() {
-        $this->user = ( new UserModel( $this->project->getOriginalOwner() ) );
-
-        $dqfEmail = $this->user->getMetadata()['dqf_username'];
-        $dqfPassword = $this->user->getMetadata()['dqf_password'];
-
-        $this->ownerSession = (new Authenticator())->login($dqfEmail, $dqfPassword) ;
+        $this->user         = ( new UserModel( $this->project->getOriginalOwner() ) );
+        $this->ownerSession = SessionProvider::getByUserId( $this->project->getOriginalOwner()->getUid() );
     }
 
     protected function _submitSourceSegments() {
@@ -189,26 +183,26 @@ class ProjectCreation {
                 $this->remoteFiles
         );
 
-        $results = $batchSegments->getResult() ;
+        $results = $batchSegments->getResult();
 
-        foreach( $results as $result ) {
+        foreach ( $results as $result ) {
             if ( empty( $result->segmentList ) ) {
-                throw new Exception('segmentList is empty');
+                throw new Exception( 'segmentList is empty' );
             }
-            $this->_saveSegmentsList( $result->segmentList ) ;
+            $this->_saveSegmentsList( $result->segmentList );
         }
 
-        $this->project->setMetadata('dqf_source_segments_submitted', 1) ;
+        $this->project->setMetadata( 'dqf_source_segments_submitted', 1 );
     }
 
     protected function _saveSegmentsList( $segmentList ) {
-        $dao = new DqfSegmentsDao() ;
-        $dao->insertBulkMap( array_map(function( $item ) {
+        $dao = new DqfSegmentsDao();
+        $dao->insertBulkMap( array_map( function ( $item ) {
             return [
-                    Functions::descope($item['clientId']),
-                    $item['dqfId'],
+                    Functions::descope( $item[ 'clientId' ] ),
+                    $item[ 'dqfId' ],
                     null
             ];
-        }, $segmentList ) ) ;
+        }, $segmentList ) );
     }
 }

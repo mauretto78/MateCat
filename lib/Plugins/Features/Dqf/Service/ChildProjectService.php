@@ -20,88 +20,89 @@ use Features\Dqf\Service\Struct\Response\ProjectResponseStruct;
 use Features\Dqf\Utils\Functions;
 
 class ChildProjectService {
-    const TRANSLATION = 'translation' ;
-    const REVIEW = 'review' ;
+    const TRANSLATION = 'translation';
+    const REVIEW      = 'review';
 
     /**
      * @var ISession
      */
-    protected $session ;
+    protected $session;
 
     /**
      * @var Chunks_ChunkStruct
      */
-    protected $chunk ;
+    protected $chunk;
 
     protected $remoteProjects;
 
-    protected $clientId ;
+    protected $clientId;
 
-    public function __construct(ISession $session, Chunks_ChunkStruct $chunk, $id_project ) {
-        $this->chunk    = $chunk  ;
-        $this->session  = $session ;
-        $this->clientId = $id_project ;
+    public function __construct( ISession $session, Chunks_ChunkStruct $chunk, $id_project ) {
+        $this->chunk    = $chunk;
+        $this->session  = $session;
+        $this->clientId = $id_project;
     }
 
-    public function deleteProject(ChildProjectRequestStruct $struct ) {
-        $client = new Client() ;
+    public function deleteProject( ChildProjectRequestStruct $struct ) {
+        $client = new Client();
         $client->setSession( $this->session );
 
-        $resource =  $client->createResource('/project/child/%s', 'delete', [
-                'headers'    =>  $this->session->filterHeaders( $struct ),
-                'pathParams' =>  $struct->getPathParams(),
+        $resource = $client->createResource( '/project/child/%s', 'delete', [
+                'headers'    => $this->session->filterHeaders( $struct ),
+                'pathParams' => $struct->getPathParams(),
         ] );
 
         $client->execRequests();
 
-        if ( count($client->curl()->getErrors() ) > 0 ) {
-            throw  new Exception('Error on delete of remote child project: ' .
-                    implode( ', ',  $client->curl()->getAllContents() )
-            ) ;
+        if ( count( $client->curl()->getErrors() ) > 0 ) {
+            throw  new Exception( 'Error on delete of remote child project: ' .
+                    implode( ', ', $client->curl()->getAllContents() )
+            );
         }
 
         $returnable = $client->curl()->getAllContents();
-        return $returnable ;
+
+        return $returnable;
     }
 
     public function updateChildProjects( $requestStructs ) {
-        $client = new Client() ;
+        $client = new Client();
         $client->setSession( $this->session );
 
-        $resources = [] ;
+        $resources = [];
 
         /** @var ChildProjectRequestStruct $requestStruct */
-        foreach( $requestStructs as $requestStruct ) {
-            $resources[] = $client->createResource('/project/child/%s', 'put', [
+        foreach ( $requestStructs as $requestStruct ) {
+            $resources[] = $client->createResource( '/project/child/%s', 'put', [
                     'headers'    => $this->session->filterHeaders( $requestStruct ),
                     'pathParams' => $requestStruct->getPathParams(),
                     'formData'   => $requestStruct->getParams()
-            ]) ;
+            ] );
         }
 
         $client->execRequests();
 
-        if ( count($client->curl()->getErrors() ) > 0 ) {
-            throw  new Exception('Error on update of remote child project: ' . implode( ', ',  $client->curl()->getAllContents() ) ) ;
+        if ( count( $client->curl()->getErrors() ) > 0 ) {
+            throw  new Exception( 'Error on update of remote child project: ' . implode( ', ', $client->curl()->getAllContents() ) );
         }
 
         $returnable = $client->curl()->getAllContents();
 
-        return $returnable  ;
+        return $returnable;
     }
 
     public function setCompleted( ChildProjectRequestStruct $requestStruct ) {
         $client = new Client();
         $client->setSession( $this->session );
 
-        $resource =  $client->createResource('/project/child/%s/status', 'put', [
-                'headers'    =>  $this->session->filterHeaders( $requestStruct ),
-                'pathParams' =>  $requestStruct->getPathParams(),
-                'formData'   =>  ['status' => 'completed']
+        $resource = $client->createResource( '/project/child/%s/status', 'put', [
+                'headers'    => $this->session->filterHeaders( $requestStruct ),
+                'pathParams' => $requestStruct->getPathParams(),
+                'formData'   => [ 'status' => 'completed' ]
         ] );
 
         $client->execRequests();
-        $this->_checkError( $client, 'Error while updating child project status to completed.');
+        $this->_checkError( $client, 'Error while updating child project status to completed.' );
 
         return $client->curl()->getSingleContent( $resource );
     }
@@ -109,37 +110,37 @@ class ChildProjectService {
     private function _checkError( Client $client, $message ) {
         $client->execRequests();
 
-        if ( count($client->curl()->getErrors() ) > 0 ) {
+        if ( count( $client->curl()->getErrors() ) > 0 ) {
             throw  new Exception( $message . ' - ' . var_export( $client->curl()->getAllContents(), true ) );
         }
     }
 
     public function getRemoteResources( $requestStructs ) {
         $client = new Client();
-        $client ->setSession( $this->session ) ;
+        $client->setSession( $this->session );
 
-        $resources = [] ;
+        $resources = [];
         /** @var ChildProjectRequestStruct $requestStruct */
-        foreach( $requestStructs as $requestStruct ) {
-            $resources[] = $client->createResource('/project/child/%s', 'get', [
+        foreach ( $requestStructs as $requestStruct ) {
+            $resources[] = $client->createResource( '/project/child/%s', 'get', [
                     'headers'    => $this->session->filterHeaders( $requestStruct ),
                     'pathParams' => $requestStruct->getPathParams()
-            ]) ;
+            ] );
         }
 
         $client->execRequests();
 
         $responses = $client->curl()->getAllContents();
 
-        if ( count($client->curl()->getErrors() ) > 0 ) {
-            throw  new Exception('Error while fetching remote child project: ' . var_export( $responses, true ) );
+        if ( count( $client->curl()->getErrors() ) > 0 ) {
+            throw  new Exception( 'Error while fetching remote child project: ' . var_export( $responses, true ) );
         }
 
-        $returnable =  array_values( array_map( function( $item ) {
-            return new ProjectResponseStruct( json_decode( $item, true )['model'] );
-        }, $responses ) ) ;
+        $returnable = array_values( array_map( function ( $item ) {
+            return new ProjectResponseStruct( json_decode( $item, true )[ 'model' ] );
+        }, $responses ) );
 
-        return $returnable  ;
+        return $returnable;
     }
 
     /***
@@ -150,21 +151,21 @@ class ChildProjectService {
      *
      * Find back the remote project, merge data and update the resource again.
      */
-    public function updateTranslationChild( DqfProjectMapStruct $dqfChildProject, ChildProjectRequestStruct $request) {
+    public function updateTranslationChild( DqfProjectMapStruct $dqfChildProject, ChildProjectRequestStruct $request ) {
         $client = new Client();
-        $client ->setSession( $this->session ) ;
+        $client->setSession( $this->session );
 
-        $resource = $client->createResource('/project/child/%s', 'put', [
-                'headers'     =>  $this->session->filterHeaders( $request ),
-                'formData'    =>  $request->getParams(),
-                'pathParams'  =>  $request->getPathParams()
-        ]);
+        $resource = $client->createResource( '/project/child/%s', 'put', [
+                'headers'    => $this->session->filterHeaders( $request ),
+                'formData'   => $request->getParams(),
+                'pathParams' => $request->getPathParams()
+        ] );
 
-        $client->execRequests() ;
+        $client->execRequests();
 
-        $response =  $client->curl()->getAllContents();
+        $response = $client->curl()->getAllContents();
 
-        return $response ;
+        return $response;
     }
 
     /**
@@ -178,34 +179,34 @@ class ChildProjectService {
      * @internal param MaserFileCreationResponseStruct[] $remoteFiles
      */
     public function createTranslationChild( DqfProjectMapStruct $parent, $remoteFiles ) {
-        $projectStruct            = new ChildProjectRequestStruct() ;
-        $projectStruct->type      = self::TRANSLATION ;
+        $projectStruct       = new ChildProjectRequestStruct();
+        $projectStruct->type = self::TRANSLATION;
 
         return $this->createChild( $parent, $remoteFiles, $projectStruct );
     }
 
     public function createRevisionChild( DqfProjectMapStruct $parent, $remoteFiles ) {
-        $projectStruct                  = new ChildProjectRequestStruct() ;
-        $projectStruct->type            = self::REVIEW ;
-        $projectStruct->reviewSettingId = $this->chunk->getProject()->getMetadataValue('dqf_review_settings_id');
+        $projectStruct                  = new ChildProjectRequestStruct();
+        $projectStruct->type            = self::REVIEW;
+        $projectStruct->reviewSettingId = $this->chunk->getProject()->getMetadataValue( 'dqf_review_settings_id' );
 
         return $this->createChild( $parent, $remoteFiles, $projectStruct );
     }
 
     /**
-     *  What session to use for files.
+     * What session to use for files.
+     *
+     * @param UserModel|null $assignee
+     *
+     * @return ISession|Session
+     * @throws \API\V2\Exceptions\AuthenticationError
      */
     protected function getSessionForFiles( UserModel $assignee = null ) {
         if ( $assignee ) {
-
-            $dqfEmail = $assignee->getMetadata()['dqf_username'];
-            $dqfPassword = $assignee->getMetadata()['dqf_password'];
-
-            return (new Authenticator())->login($dqfEmail, $dqfPassword);
+            return SessionProvider::getByUserId( $assignee->getMateCatUser()->getUid() );
         }
-        else {
-            return $this->session ;
-        }
+
+        return $this->session;
     }
 
     /**
@@ -218,7 +219,7 @@ class ChildProjectService {
      */
     protected function _setFilesTargetLanguage( $remoteFiles, $childProject, ISession $session ) {
 
-        $client = new Client() ;
+        $client = new Client();
         $client->setSession( $session );
 
         foreach ( $this->chunk->getFiles() as $file ) {
@@ -255,7 +256,7 @@ class ChildProjectService {
 
         $projectStruct->sessionId = $this->session->getSessionId();
         $projectStruct->clientId  = Functions::scopeId( $this->clientId );
-        $projectStruct->parentKey = $parent->dqf_project_uuid ;
+        $projectStruct->parentKey = $parent->dqf_project_uuid;
 
         $client = new Client();
         $client->setSession( $this->session );

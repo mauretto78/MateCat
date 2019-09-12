@@ -14,6 +14,7 @@ use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\ChildProjectService;
 use Features\Dqf\Service\FileIdMapping;
 use Features\Dqf\Service\ISession;
+use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\Request\ChildProjectRequestStruct;
 use Files_FileStruct;
 use Jobs\MetadataDao;
@@ -81,10 +82,7 @@ abstract class AbstractChildProject {
         }
 
         $this->dqfUser     = new UserModel( ( new Users_UserDao() )->getByUid( $uid ) );
-        $dqfEmail    = $this->dqfUser->getMetadata()['dqf_username'];
-        $dqfPassword = $this->dqfUser->getMetadata()['dqf_password'];
-
-        $this->userSession = (new Authenticator())->login($dqfEmail, $dqfPassword);
+        $this->userSession = SessionProvider::getByUserId($uid);
     }
 
     /**
@@ -142,12 +140,6 @@ abstract class AbstractChildProject {
      * @throws Exception
      */
     protected function _findRemoteFileId( Files_FileStruct $file ) {
-//        $projectOwner = new UserModel ( $this->chunk->getProject()->getOriginalOwner()  ) ;
-////
-////        $dqfEmail    = $projectOwner->getMetadata()['dqf_username'];
-////        $dqfPassword = $projectOwner->getMetadata()['dqf_password'];
-////
-////        $service = new FileIdMapping( (new Authenticator())->login($dqfEmail, $dqfPassword), $file ) ;
         $service = new FileIdMapping( $this->userSession, $file ) ;
 
         return $service->getRemoteId() ;
