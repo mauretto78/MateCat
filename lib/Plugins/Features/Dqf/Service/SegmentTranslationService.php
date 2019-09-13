@@ -104,7 +104,7 @@ class SegmentTranslationService extends AbstractService {
         $request->sourceSegment     = $segment->segment;
         $request->segmentOriginId   = $segmentOriginId;
         $request->matchRate         = $matchRate;
-        $request->indexNo           =  1; // ????
+        $request->indexNo           = $this->getSegmentIndexInJob($chunk, $this->translation->id_segment);
 
         return $request;
     }
@@ -186,5 +186,22 @@ class SegmentTranslationService extends AbstractService {
         }
 
         return $chunk->getProject()->create_date;
+    }
+
+    /**
+     * @param \Chunks_ChunkStruct $chunk
+     * @param int $idTranslation
+     *
+     * @return int|string
+     */
+    private function getSegmentIndexInJob(\Chunks_ChunkStruct $chunk, $idTranslation){
+        $segments = $chunk->getSegments();
+
+        /** @var \Segments_SegmentStruct $segment */
+        foreach ($segments as $index => $segment){
+            if($idTranslation === $segment->id) {
+                return $index;
+            }
+        }
     }
 }
