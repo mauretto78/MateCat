@@ -91,4 +91,8 @@ class UserModel {
     public function getMetadata() {
         return $this->metadata;
     }
+
+    public function getUid(){
+        return $this->user->getUid();
+    }
 }

@@ -14,6 +14,7 @@ use Database;
 use Exception;
 use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\ChildProjectService;
+use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
 use Utils;
 
@@ -122,8 +123,12 @@ class ChildProjectCreationModel {
         return $remoteProject ;
     }
 
+    /**
+     * @return CreateProjectResponseStruct
+     * @throws \API\V2\Exceptions\AuthenticationError
+     */
     protected function createForRevision() {
-        $projectService = new ChildProjectService( $this->user->getSession(), $this->chunk, $this->id_project ) ; // Does it work?
+        $projectService = new ChildProjectService( SessionProvider::getByUserId($this->user->getUid()), $this->chunk, $this->id_project ) ;
 
         return $projectService->createRevisionChild(
                 $this->parentProject, $this->files
@@ -135,7 +140,7 @@ class ChildProjectCreationModel {
      * @throws Exception
      */
     protected function createForTranslation() {
-        $projectService = new ChildProjectService( $this->user->getSession(), $this->chunk, $this->id_project ) ; // Does it work?
+        $projectService = new ChildProjectService( SessionProvider::getByUserId($this->user->getUid()), $this->chunk, $this->id_project ) ;
 
         return $projectService->createTranslationChild(
                 $this->parentProject, $this->files

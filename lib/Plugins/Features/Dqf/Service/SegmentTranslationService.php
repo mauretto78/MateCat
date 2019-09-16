@@ -11,6 +11,7 @@ namespace Features\Dqf\Service;
 use Features\Dqf\Model\CachedAttributes\SegmentOrigin;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
+use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Model\ExtendedTranslationStruct;
 use Features\Dqf\Model\TranslationVersionDao;
 use Features\Dqf\Service\Struct\Request\ChildProjectSegmentTranslationRequestStruct;
@@ -54,11 +55,14 @@ class SegmentTranslationService extends AbstractService {
         $this->client->curl()->multiExec();
         $content = json_decode( $this->client->curl()->getSingleContent( $resource ), true );
 
-        if ( $this->client->curl()->hasError( $resource ) ) {
-            throw new \Exception( 'Error trying to get segment id ' . $this->translation->id_segment );
+        if ( $this->client->curl()->hasError( $resource ) and  $content[ 'status' ] !== 'OK') {
+            throw new \Exception( 'Error trying to setup the translation segment id ' . $this->translation->id_segment );
         }
 
-        return $content[ 'dqfId' ];
+        // message => Segments successfully updated
+        // status => OK
+
+        return $content[ 'status' ];
     }
 
     /**
@@ -89,6 +93,8 @@ class SegmentTranslationService extends AbstractService {
 
         // get $segmentOriginId and $matchRate
         list( $segmentOriginId, $matchRate ) = $this->filterDqfSegmentOriginAndMatchRate( $chunk );
+
+        //$dqfSegment = (new DqfSegmentsDao())->getByIdSegment($segment->id);
 
         $request                    = new ChildProjectSegmentTranslationRequestStruct();
         $request->sessionId         = $this->session->getSessionId();

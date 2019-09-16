@@ -48,7 +48,8 @@ class ChildProjectSegmentTranslationRequestStruct extends BaseRequestStruct {
                 'projectId'      => $this->projectId,
                 'fileId'         => $this->fileId,
                 'targetLangCode' => $this->targetLangCode,
-                'segmentId'      => $this->sourceSegmentId
+                'segmentId'      => $this->sourceSegmentId,
+                'translationId'  => $this->translationId,
         ];
     }
 

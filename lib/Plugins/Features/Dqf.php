@@ -9,19 +9,14 @@ use BasicFeatureStruct;
 use Chunks_ChunkStruct;
 use Exceptions\ValidationError;
 use Features;
-use Features\Dqf\Model\DqfProjectMapDao;
-use Features\Dqf\Model\DqfProjectMapStruct;
+use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Model\RevisionChildProject;
 use Features\Dqf\Model\TranslationChildProject;
 use Features\Dqf\Model\UserModel;
-use Features\Dqf\Service\ChildProjectSegmentId;
-use Features\Dqf\Service\FileIdMapping;
-use Features\Dqf\Service\ISession;
 use Features\Dqf\Service\SegmentTranslationService;
 use Features\Dqf\Service\Session;
 use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\ProjectCreationStruct;
-use Features\Dqf\Service\Struct\Request\ChildProjectSegmentTranslationRequestStruct;
 use Features\Dqf\Utils\ProjectMetadata;
 use Features\ProjectCompletion\CompletionEventStruct;
 use Features\ReviewExtended\Model\ArchivedQualityReportModel;
@@ -30,7 +25,6 @@ use Klein\Klein;
 use Monolog\Logger;
 use PHPTALWithAppend;
 use Projects_ProjectStruct;
-use Segments_SegmentDao;
 use Segments_SegmentStruct;
 use Translations_SegmentTranslationStruct;
 use Users_UserDao;
@@ -309,22 +303,28 @@ class Dqf extends BaseFeature {
      * @param $params
      */
     public function setTranslationCommitted( $params ) {
-        /** @var Users_UserStruct $user */
-        $user = $params[ 'user' ];
+
+        // check if the segment is already uploaded on DQF
 
         /** @var Segments_SegmentStruct $segment */
-        $segment = $params[ 'segment' ];
+        $segment    = $params[ 'segment' ];
+        $dqfSegment = ( new DqfSegmentsDao() )->getByIdSegment( $segment->id );
 
-        /** @var Translations_SegmentTranslationStruct $translation */
-        $translation = $params[ 'translation' ];
+        if ( $dqfSegment ) {
+            /** @var Users_UserStruct $user */
+            $user = $params[ 'user' ];
 
-        try {
-            $session                   = SessionProvider::getByUserId( $user->getUid() );
-            $segmentTranslationService = new SegmentTranslationService( $session, $translation );
-            $segmentTranslationService->process();
+            /** @var Translations_SegmentTranslationStruct $translation */
+            $translation = $params[ 'translation' ];
 
-        } catch ( \Exception $e ) {
-            \Log::doJsonLog( "Segment with ID  " . $segment->id . " cannot be sent to DQF." );
+            try {
+                $session                   = SessionProvider::getByUserId( $user->getUid() );
+                $segmentTranslationService = new SegmentTranslationService( $session, $translation );
+                $segmentTranslationService->process();
+
+            } catch ( \Exception $e ) {
+                \Log::doJsonLog( "Segment with ID  " . $segment->id . " cannot be sent to DQF." );
+            }
         }
     }
 }
