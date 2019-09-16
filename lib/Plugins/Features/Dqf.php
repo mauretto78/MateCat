@@ -9,7 +9,7 @@ use BasicFeatureStruct;
 use Chunks_ChunkStruct;
 use Exceptions\ValidationError;
 use Features;
-use Features\Dqf\Model\DqfSegmentsDao;
+use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\RevisionChildProject;
 use Features\Dqf\Model\TranslationChildProject;
 use Features\Dqf\Model\UserModel;
@@ -305,12 +305,13 @@ class Dqf extends BaseFeature {
     public function setTranslationCommitted( $params ) {
 
         // check if the segment is already uploaded on DQF
+        $type       = ( $params[ 'translation' ][ 'status' ] === 'APPROVED' ) ? DqfProjectMapDao::PROJECT_TYPE_REVISE : DqfProjectMapDao::PROJECT_TYPE_TRANSLATE;
+        $dqfProject = ( new DqfProjectMapDao() )->getByType( $params[ 'chunk' ], $type );
 
-        /** @var Segments_SegmentStruct $segment */
-        $segment    = $params[ 'segment' ];
-        $dqfSegment = ( new DqfSegmentsDao() )->getByIdSegment( $segment->id );
+        if ( $dqfProject ) {
+            /** @var Segments_SegmentStruct $segment */
+            $segment = $params[ 'segment' ];
 
-        if ( $dqfSegment ) {
             /** @var Users_UserStruct $user */
             $user = $params[ 'user' ];
 
@@ -321,7 +322,6 @@ class Dqf extends BaseFeature {
                 $session                   = SessionProvider::getByUserId( $user->getUid() );
                 $segmentTranslationService = new SegmentTranslationService( $session, $translation );
                 $segmentTranslationService->process();
-
             } catch ( \Exception $e ) {
                 \Log::doJsonLog( "Segment with ID  " . $segment->id . " cannot be sent to DQF." );
             }
