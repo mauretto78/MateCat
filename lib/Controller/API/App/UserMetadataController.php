@@ -9,28 +9,41 @@
 namespace API\App;
 
 
+use API\V2\Exceptions\AuthenticationError;
 use Bootstrap;
 use Exceptions\NotFoundException;
-use Users\MetadataModel;
+use Features\Dqf\Service\SessionProvider;
+use Features\Dqf\Utils\UserMetadata;
 
 class UserMetadataController extends AbstractStatefulKleinController {
 
     public function update() {
 
         if ( !$this->user ) {
-            throw new NotFoundException( 'user not found' );
+            throw new NotFoundException( 'User not found' );
         }
 
-        $model = new MetadataModel( $this->user, $this->request->param( 'metadata' ) );
+        $dqfUsername = $this->request->param( 'metadata' )[ 'dqf_username' ];
+        $dqfPassword = $this->request->param( 'metadata' )[ 'dqf_password' ];
 
-        $model->save();
-        $data = $this->user->getMetadataAsKeyValue();
+        try {
+            // Authenticate
+            $session = SessionProvider::getByCredentials( $dqfUsername, $dqfPassword );
 
-        if ( empty ( $data ) ) {
-            $data = null;
+            // persist data on db
+            UserMetadata::setCredentials( $this->user->getUid(), $session );
+
+            // update response
+            $data = $this->user->getMetadataAsKeyValue();
+
+            if ( empty ( $data ) ) {
+                $data = null;
+            }
+
+            $this->response->json( $data );
+        } catch ( AuthenticationError $e ) {
+            $this->response->json( null );
         }
-
-        $this->response->json( $data );
     }
 
     protected function afterConstruct() {

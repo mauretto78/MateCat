@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fregini
- * Date: 10/07/2017
- * Time: 17:15
- */
 
 namespace Features\Dqf\Service\Struct\Request;
 
@@ -16,7 +10,8 @@ class ChildProjectSegmentTranslationRequestStruct extends BaseRequestStruct {
     public $projectId;
     public $fileId;
     public $targetLangCode;
-    public $segmentId;
+    public $sourceSegmentId;
+    public $translationId;
 
     // header
     public $sessionId;
@@ -53,7 +48,7 @@ class ChildProjectSegmentTranslationRequestStruct extends BaseRequestStruct {
                 'projectId'      => $this->projectId,
                 'fileId'         => $this->fileId,
                 'targetLangCode' => $this->targetLangCode,
-                'segmentId'      => $this->segmentId
+                'segmentId'      => $this->sourceSegmentId
         ];
     }
 

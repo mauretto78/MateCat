@@ -43,22 +43,22 @@ class SegmentTranslationService extends AbstractService {
      */
     public function process() {
         $request = $this->createChildProjectSegmentTranslationRequestStruct();
-        $url = "/project/child/%s/file/%s/targetLang/%s/segment/%s" ;
+        $url     = "/project/child/%s/file/%s/targetLang/%s/sourceSegment/%s/translation/%s";
 
         $resource = $this->client->createResource( $url, 'put', [
                 'headers'    => $this->session->filterHeaders( $request ),
                 'pathParams' => $request->getPathParams(),
-                'formData' => $request->getFormData(),
+                'formData'   => $request->getFormData(),
         ] );
 
-        $this->client->curl()->multiExec() ;
-        $content = json_decode( $this->client->curl()->getSingleContent( $resource ), true ) ;
+        $this->client->curl()->multiExec();
+        $content = json_decode( $this->client->curl()->getSingleContent( $resource ), true );
 
         if ( $this->client->curl()->hasError( $resource ) ) {
-            throw new \Exception('Error trying to get segment id ' . $this->translation->id_segment) ;
+            throw new \Exception( 'Error trying to get segment id ' . $this->translation->id_segment );
         }
 
-        return $content['dqfId'] ;
+        return $content[ 'dqfId' ];
     }
 
     /**
@@ -87,6 +87,7 @@ class SegmentTranslationService extends AbstractService {
                 $segment->id
         )[ $segment->id ];
 
+        // get $segmentOriginId and $matchRate
         list( $segmentOriginId, $matchRate ) = $this->filterDqfSegmentOriginAndMatchRate( $chunk );
 
         $request                    = new ChildProjectSegmentTranslationRequestStruct();
@@ -96,7 +97,8 @@ class SegmentTranslationService extends AbstractService {
         $request->projectId         = $dqfProject->dqf_project_id;
         $request->targetLangCode    = $chunk->target;
         $request->apiKey            = \INIT::$DQF_API_KEY;
-        $request->segmentId         = $this->getSegmentId( $this->session, $this->translation->id_segment );
+        $request->sourceSegmentId   = $this->getSegmentId( $this->session, $segment->id );
+        $request->translationId     = $this->getTranslationId( $this->session, $dqfProject->id, $translation->id_segment );
         $request->mtEngineId        = 22; // MyMemory
         $request->mtEngineOtherName = '';
         $request->targetSegment     = $translation->translation_before;
@@ -104,7 +106,7 @@ class SegmentTranslationService extends AbstractService {
         $request->sourceSegment     = $segment->segment;
         $request->segmentOriginId   = $segmentOriginId;
         $request->matchRate         = $matchRate;
-        $request->indexNo           = $this->getSegmentIndexInJob($chunk, $this->translation->id_segment);
+        $request->indexNo           = $this->getSegmentIndexInJob( $chunk, $segment->id );
 
         return $request;
     }
@@ -131,8 +133,21 @@ class SegmentTranslationService extends AbstractService {
      * @throws \Exception
      */
     private function getSegmentId( $session, $localSegmentId ) {
-        $segment = ( new \Segments_SegmentDao() )->getById( $localSegmentId );
-        $service = new ChildProjectSegmentId( $session, $segment );
+        $service = new ChildProjectSegmentId( $session, $localSegmentId );
+
+        return $service->getRemoteId();
+    }
+
+    /**
+     * @param $session
+     * @param $dqfChildProjectId
+     * @param $localSegmentId
+     *
+     * @return mixed
+     * @throws \Exception
+     */
+    private function getTranslationId( $session, $dqfChildProjectId, $localSegmentId ) {
+        $service = new ChildProjectTranslationId( $session, $dqfChildProjectId, $localSegmentId );
 
         return $service->getRemoteId();
     }
@@ -165,7 +180,7 @@ class SegmentTranslationService extends AbstractService {
             ];
         }
 
-        $object = (new SegmentOrigin())->getByName( $data[ 'originName' ] );
+        $object = ( new SegmentOrigin() )->getByName( $data[ 'originName' ] );
 
         return [ $object[ 'id' ], $data[ 'matchRate' ] ];
     }
@@ -190,16 +205,16 @@ class SegmentTranslationService extends AbstractService {
 
     /**
      * @param \Chunks_ChunkStruct $chunk
-     * @param int $idTranslation
+     * @param int                 $idTranslation
      *
      * @return int|string
      */
-    private function getSegmentIndexInJob(\Chunks_ChunkStruct $chunk, $idTranslation){
+    private function getSegmentIndexInJob( \Chunks_ChunkStruct $chunk, $idTranslation ) {
         $segments = $chunk->getSegments();
 
         /** @var \Segments_SegmentStruct $segment */
-        foreach ($segments as $index => $segment){
-            if($idTranslation === $segment->id) {
+        foreach ( $segments as $index => $segment ) {
+            if ( $idTranslation === $segment->id ) {
                 return $index;
             }
         }

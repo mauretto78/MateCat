@@ -59,11 +59,15 @@ class Authenticator {
 
         \Log::doJsonLog( " SessionId " . $response->sessionId );
 
-        $metaDao = new MetadataDao();
-        $uid = $metaDao->getUidByDqfUsernameAndPassword($email, $password);
-        $metaDao->set($uid, 'dqf_session_id', $response->sessionId);
-        $metaDao->set($uid, 'dqf_session_expires', (int)(strtotime("now") + (int)$response->expires) );
+//        $metaDao = new MetadataDao();
+//        $uid = $metaDao->getUidByDqfUsernameAndPassword($email, $password);
+//        if(null !== $uid){
+//            $metaDao->set($uid, 'dqf_session_id', $response->sessionId);
+//            $metaDao->set($uid, 'dqf_session_expires', (int)(strtotime("now") + (int)$response->expires) );
+//        }
 
+        $this->session->setEmail( $email );
+        $this->session->setPassword( $password );
         $this->session->setSessionId( $response->sessionId );
         $this->session->setExpires( (int)(strtotime("now") + (int)$response->expires) );
 
@@ -94,12 +98,7 @@ class Authenticator {
         }
 
         \Log::doJsonLog( " Logging out with success" );
-        
-        $this->session->setSessionId(null);
-        $this->session->setEmail(null);
-        $this->session->setPassword(null);
-        $this->session->setExpires(null);
 
-        return $this->session;
+        return new Session();
     }
 }

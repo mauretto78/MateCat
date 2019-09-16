@@ -55,7 +55,10 @@ class SessionProvider {
             return $session;
         }
 
-        return self::getByCredentials( $meta[ 'dqf_username' ], $meta[ 'dqf_password' ] );
+        $session = self::getByCredentials( $meta[ 'dqf_username' ], $meta[ 'dqf_password' ] );
+        UserMetadata::setCredentials($userId, $session);
+
+        return $session;
     }
 
     /**

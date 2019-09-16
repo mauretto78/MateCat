@@ -4,17 +4,16 @@ namespace Features\Dqf\Service;
 
 use Exception;
 use Features\Dqf\Utils\Functions;
-use Files_FileStruct;
 use INIT;
 
 class ChildProjectSegmentId {
 
-    protected $session ;
-    protected $segment ;
+    private $session;
+    private $localSegmentId;
 
-    public function __construct(ISession $session, \Segments_SegmentStruct $segment ) {
-        $this->session = $session ;
-        $this->segment = $segment ;
+    public function __construct( ISession $session, $localSegmentId ) {
+        $this->session        = $session;
+        $this->localSegmentId = $localSegmentId;
     }
 
     public function getRemoteId() {
@@ -22,20 +21,20 @@ class ChildProjectSegmentId {
         $client->setSession( $this->session );
 
         $headers = [
-                'sessionId'  =>   $this->session->getSessionId() ,
-                'apiKey'     =>   INIT::$DQF_API_KEY ,
-                'clientId'   =>   Functions::scopeId( $this->segment->id )
+                'sessionId' => $this->session->getSessionId(),
+                'apiKey'    => INIT::$DQF_API_KEY,
+                'clientId'  => Functions::scopeId( $this->localSegmentId )
         ];
 
-        $resource = $client->createResource('/DQFSegmentId', 'get', [ 'headers' => $headers ]);
+        $resource = $client->createResource( '/DQFSegmentId', 'get', [ 'headers' => $headers ] );
 
-        $client->curl()->multiExec() ;
-        $content = json_decode( $client->curl()->getSingleContent( $resource ), true ) ;
+        $client->curl()->multiExec();
+        $content = json_decode( $client->curl()->getSingleContent( $resource ), true );
 
         if ( $client->curl()->hasError( $resource ) ) {
-            throw new Exception('Error trying to get remote file id') ;
+            throw new Exception( 'Error trying to get remote segment id' );
         }
 
-        return $content['dqfId'] ;
+        return $content[ 'dqfId' ];
     }
 }
