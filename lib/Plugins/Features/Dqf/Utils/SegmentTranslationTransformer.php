@@ -57,27 +57,27 @@ class SegmentTranslationTransformer {
         // get the DQF remote segmentId and translationId
         $dqfSegment = ( new DqfSegmentsDao() )->getByIdSegment( $segment->id );
 
-        $final                        = [];
-        $final[ 'sessionId' ]         = $this->session->getSessionId();
-        $final[ 'clientId' ]          = $this->translationIdToDqf( $dqfProject->id, $extendedTranslation->id_segment );
-        $final[ 'fileId' ]            = $this->getRemoteFileId( $this->session, $segment->id_file );
-        $final[ 'projectKey' ]        = $dqfProject->dqf_project_uuid;
-        $final[ 'projectId' ]         = $dqfProject->dqf_project_id;
-        $final[ 'targetLangCode' ]    = $chunk->target;
-        $final[ 'apiKey' ]            = INIT::$DQF_API_KEY;
-        $final[ 'sourceSegmentId' ]   = $dqfSegment->dqf_segment_id;
-        $final[ 'translationId' ]     = $dqfSegment->dqf_translation_id;
-        $final[ 'mtEngineId' ]        = 22; // MyMemory
-        $final[ 'mtEngineOtherName' ] = '';
-        $final[ 'targetSegment' ]     = $extendedTranslation->translation_before;
-        $final[ 'editedSegment' ]     = $extendedTranslation->translation_after;
-        $final[ 'sourceSegment' ]     = $segment->segment;
-        $final[ 'segmentOriginId' ]   = $segmentOriginId;
-        $final[ 'matchRate' ]         = $matchRate;
-        $final[ 'time' ]              = $extendedTranslation->time;
-        $final[ 'indexNo' ]           = $this->getSegmentIndexInJob( $chunk, $segment->id );
+        $transformedArray                        = [];
+        $transformedArray[ 'sessionId' ]         = $this->session->getSessionId();
+        $transformedArray[ 'clientId' ]          = $this->translationIdToDqf( $dqfProject->id, $extendedTranslation->id_segment );
+        $transformedArray[ 'fileId' ]            = $this->getRemoteFileId( $this->session, $segment->id_file );
+        $transformedArray[ 'projectKey' ]        = $dqfProject->dqf_project_uuid;
+        $transformedArray[ 'projectId' ]         = $dqfProject->dqf_project_id;
+        $transformedArray[ 'targetLangCode' ]    = $chunk->target;
+        $transformedArray[ 'apiKey' ]            = INIT::$DQF_API_KEY;
+        $transformedArray[ 'sourceSegmentId' ]   = $dqfSegment->dqf_segment_id;
+        $transformedArray[ 'translationId' ]     = $dqfSegment->dqf_translation_id;
+        $transformedArray[ 'mtEngineId' ]        = 22; // MyMemory
+        $transformedArray[ 'mtEngineOtherName' ] = '';
+        $transformedArray[ 'targetSegment' ]     = $extendedTranslation->translation_before;
+        $transformedArray[ 'editedSegment' ]     = $extendedTranslation->translation_after;
+        $transformedArray[ 'sourceSegment' ]     = $segment->segment;
+        $transformedArray[ 'segmentOriginId' ]   = $segmentOriginId;
+        $transformedArray[ 'matchRate' ]         = $matchRate;
+        $transformedArray[ 'time' ]              = $extendedTranslation->time;
+        $transformedArray[ 'indexNo' ]           = $this->getSegmentIndexInJob( $chunk, $segment->id );
 
-        return $final;
+        return $transformedArray;
     }
 
     /**
@@ -105,6 +105,8 @@ class SegmentTranslationTransformer {
     }
 
     /**
+     * Find date of completion event for inverse type
+     *
      * @param Translations_SegmentTranslationStruct $translation
      * @param Chunks_ChunkStruct                    $chunk
      *
@@ -112,15 +114,10 @@ class SegmentTranslationTransformer {
      * @throws \Exception
      */
     private function getLimitDate( Translations_SegmentTranslationStruct $translation, Chunks_ChunkStruct $chunk ) {
-        // find date of completion event for inverse type
         $is_review = ( $this->getProjectType( $translation ) == DqfProjectMapDao::PROJECT_TYPE_REVISE );
         $prevEvent = \Chunks_ChunkCompletionEventDao::lastCompletionRecord( $chunk, [ 'is_review' => !$is_review ] );
 
-        if ( $prevEvent ) {
-            return $prevEvent[ 'create_date' ];
-        }
-
-        return $chunk->getProject()->create_date;
+        return ($prevEvent) ? $prevEvent[ 'create_date' ] : $chunk->getProject()->create_date;
     }
 
     /**

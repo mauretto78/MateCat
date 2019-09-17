@@ -19,7 +19,7 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
     /**
      * This function returns a data structure that answers to the following question:
      *
-     *  - How did the segments change since a given date?
+     * - How did the segments change since a given date?
      *
      * @param $file
      * @param $since
@@ -28,7 +28,6 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
      *
      * @return ExtendedTranslationStruct[]
      */
-
     public function getExtendedTranslationByFile( $file, $since, $min, $max ) {
 
         $sql = "SELECT
@@ -119,6 +118,9 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
      * actually found in the edit area when editing the segment, which may or may not be the content
      * of `segment_translations.translation`.
      *
+     * @param $row
+     *
+     * @return mixed
      */
     private function getTranslationBefore( $row ) {
         if ( $this->__isFirstTranslation( $row ) ) {
@@ -133,10 +135,9 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
     }
 
     /**
-     * @param $data
      * @param $row
      *
-     * @return mixed
+     * @return array
      */
     private function getSegmentOrigin( $row ) {
 
