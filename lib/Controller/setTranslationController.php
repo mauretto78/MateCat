@@ -264,7 +264,8 @@ class setTranslationController extends ajaxController {
         $this->featureSet->filter( 'rewriteContributionContexts', $segmentsList, $this->__postInput );
 
         $this->context_before = $this->filter->fromLayer0ToLayer1( $segmentsList->id_before->segment );
-        $this->context_after  = $this->filter->fromLayer0ToLayer1( $segmentsList->id_after->segment );}
+        $this->context_after  = $this->filter->fromLayer0ToLayer1( $segmentsList->id_after->segment );
+    }
 
     /**
      * @return int|mixed
@@ -306,10 +307,10 @@ class setTranslationController extends ajaxController {
         //compare segment-translation and get results
         // QA here stands for Quality Assurance
         $spaceHandler = new FromViewNBSPToSpaces();
-        $__seg = $spaceHandler->transform( $this->__postInput[ 'segment' ] );
-        $__tra = $spaceHandler->transform( $this->__postInput[ 'translation' ] );
+        $__seg        = $spaceHandler->transform( $this->__postInput[ 'segment' ] );
+        $__tra        = $spaceHandler->transform( $this->__postInput[ 'translation' ] );
 
-        $check        = new QA( $__seg, $__tra );
+        $check = new QA( $__seg, $__tra );
         $check->setFeatureSet( $this->featureSet );
         $check->performConsistencyCheck();
 
@@ -560,8 +561,8 @@ class setTranslationController extends ajaxController {
                     'statuses' => $this->split_statuses
             ];
 
-            $translationDao                          = new TranslationsSplit_SplitDAO( Database::obtain() );
-            $result                                  = $translationDao->update( $translationStruct );
+            $translationDao = new TranslationsSplit_SplitDAO( Database::obtain() );
+            $result         = $translationDao->update( $translationStruct );
 
         }
 
@@ -614,7 +615,8 @@ class setTranslationController extends ajaxController {
 
             try {
                 $update_completed = Jobs_JobDao::setJobComplete( $this->chunk );
-            } catch ( Exception $ignore ) {}
+            } catch ( Exception $ignore ) {
+            }
 
             if ( empty( $update_completed ) ) {
                 $msg = "\n\n Error setJobCompleteness \n\n " . var_export( $_POST, true );

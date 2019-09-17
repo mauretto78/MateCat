@@ -9,7 +9,6 @@ use BasicFeatureStruct;
 use Chunks_ChunkStruct;
 use Exceptions\ValidationError;
 use Features;
-use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\RevisionChildProject;
 use Features\Dqf\Model\TranslationChildProject;
 use Features\Dqf\Model\UserModel;
@@ -18,6 +17,7 @@ use Features\Dqf\Service\Session;
 use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\ProjectCreationStruct;
 use Features\Dqf\Utils\ProjectMetadata;
+use Features\Dqf\Utils\SegmentTranslationChecker;
 use Features\ProjectCompletion\CompletionEventStruct;
 use Features\ReviewExtended\Model\ArchivedQualityReportModel;
 use INIT;
@@ -298,17 +298,19 @@ class Dqf extends BaseFeature {
     }
 
     /**
+     * ----------------------------------------------------------
      * Send a single translation to DQF
+     * ----------------------------------------------------------
+     *
+     * Update the segment translation only if:
+     * - the segment translation is in TRANSLATION status
+     * - these is already a DQF project including the segment translation
      *
      * @param $params
      */
     public function setTranslationCommitted( $params ) {
 
-        // check if the segment is already uploaded on DQF
-        $type       = ( $params[ 'translation' ][ 'status' ] === 'APPROVED' ) ? DqfProjectMapDao::PROJECT_TYPE_REVISE : DqfProjectMapDao::PROJECT_TYPE_TRANSLATE;
-        $dqfProject = ( new DqfProjectMapDao() )->getByType( $params[ 'chunk' ], $type );
-
-        if ( $dqfProject ) {
+        if ( ( new SegmentTranslationChecker() )->isSingleUpdateAllowed( $params[ 'translation' ] ) ) {
             /** @var Segments_SegmentStruct $segment */
             $segment = $params[ 'segment' ];
 

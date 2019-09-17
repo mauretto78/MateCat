@@ -1,13 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fregini
- * Date: 03/03/2017
- * Time: 17:09
- */
 
 namespace Features\Dqf\Utils;
-
 
 use Features\Dqf\Service\ISession;
 use Users\MetadataDao;

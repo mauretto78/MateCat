@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Features\Dqf\Utils ;
+namespace Features\Dqf\Utils;
 
 class ProjectMetadata {
 
@@ -21,50 +21,50 @@ class ProjectMetadata {
      */
     public static function getInputFilter() {
         return [
-                'dqf'               => ['filter' => FILTER_VALIDATE_BOOLEAN],
-                'dqf_content_type'  => ['filter' => FILTER_VALIDATE_INT ],
-                'dqf_industry'      => ['filter' => FILTER_VALIDATE_INT ],
-                'dqf_process'       => ['filter' => FILTER_VALIDATE_INT ],
-                'dqf_quality_level' => ['filter' => FILTER_VALIDATE_INT ]
-        ] ;
+                'dqf'               => [ 'filter' => FILTER_VALIDATE_BOOLEAN ],
+                'dqf_content_type'  => [ 'filter' => FILTER_VALIDATE_INT ],
+                'dqf_industry'      => [ 'filter' => FILTER_VALIDATE_INT ],
+                'dqf_process'       => [ 'filter' => FILTER_VALIDATE_INT ],
+                'dqf_quality_level' => [ 'filter' => FILTER_VALIDATE_INT ]
+        ];
     }
 
     public static function getValiationErrors( $values ) {
         $cachedAttributesToCheck = [
                 'dqf_content_type'  => 'ContentType',
                 'dqf_industry'      => 'Industry',
-                'dqf_process'       => 'Process' ,
+                'dqf_process'       => 'Process',
                 'dqf_quality_level' => 'QualityLevel'
-        ] ;
+        ];
 
-        $errors = [] ;
+        $errors = [];
 
-        foreach( $cachedAttributesToCheck as $field => $class ) {
-           if ( empty( $values[ $field ] ) ) {
-               $errors [] = "missing param $field" ;
-               continue;
-           }
+        foreach ( $cachedAttributesToCheck as $field => $class ) {
+            if ( empty( $values[ $field ] ) ) {
+                $errors [] = "missing param $field";
+                continue;
+            }
 
-           $class_path = '\Features\Dqf\Model\CachedAttributes\\' . $class ;
-           if ( class_exists( $class_path )  ) {
-               $cls = new $class_path() ;
+            $class_path = '\Features\Dqf\Model\CachedAttributes\\' . $class;
+            if ( class_exists( $class_path ) ) {
+                $cls = new $class_path();
 
-               if ( !in_array( $values[ $field ], $cls->getIds() ) ) {
-                   $errors[] = "param $field is not valid" ;
-                   continue ;
-               }
-           }
+                if ( !in_array( $values[ $field ], $cls->getIds() ) ) {
+                    $errors[] = "param $field is not valid";
+                    continue;
+                }
+            }
         }
 
-        return $errors ;
+        return $errors;
     }
 
-    public static function extractProjectParameters($project_metadata) {
+    public static function extractProjectParameters( $project_metadata ) {
         return [
-                'contentTypeId'  => $project_metadata['dqf_content_type'],
-                'industryId'     => $project_metadata['dqf_industry'],
-                'processId'      => $project_metadata['dqf_process'],
-                'qualityLevelId' => $project_metadata['dqf_quality_level']
+                'contentTypeId'  => $project_metadata[ 'dqf_content_type' ],
+                'industryId'     => $project_metadata[ 'dqf_industry' ],
+                'processId'      => $project_metadata[ 'dqf_process' ],
+                'qualityLevelId' => $project_metadata[ 'dqf_quality_level' ]
         ];
     }
 
