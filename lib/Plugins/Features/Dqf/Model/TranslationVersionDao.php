@@ -10,7 +10,6 @@ namespace Features\Dqf\Model;
 
 use DataAccess_AbstractDao;
 use Database;
-use Log;
 use PDO;
 
 class TranslationVersionDao extends DataAccess_AbstractDao {
@@ -31,8 +30,6 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
      */
 
     public function getExtendedTranslationByFile( $file, $since, $min, $max ) {
-
-        //Log::doJsonLog('getExtendedTranslationByFile', func_get_args() ) ;
 
         $sql = "SELECT
 
@@ -70,22 +67,22 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
                   s.id,  -- <== this ensures segments are processed from first to last
                   stv.id -- <== this ensures the first joined version is the last, all more recent intermediate
                          --     versions are skipped during the following cycle. See below `while` loop below. 
-                " ;
+                ";
 
         $conn = Database::obtain()->getConnection();
         $stmt = $conn->prepare( $sql );
 
-        $stmt->execute([
+        $stmt->execute( [
                 'id_file' => $file->id,
                 'since'   => $since,
                 'min'     => $min,
                 'max'     => $max
-        ]) ;
+        ] );
 
         /** @var ExtendedTranslationStruct[] $result */
-        $result = [] ;
+        $result = [];
 
-        while( $row = $stmt->fetch( PDO::FETCH_ASSOC ) ) {
+        while ( $row = $stmt->fetch( PDO::FETCH_ASSOC ) ) {
 
             /**
              * First off, skip the segment if we processed this record once.
@@ -95,102 +92,127 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
              *
              */
 
-            if ( isset( $result[ $row['id'] ] ) ) {
-                continue ;
+            if ( isset( $result[ $row[ 'id' ] ] ) ) {
+                continue;
             }
 
             /**
              * Start populating the data array for ExtendedTranslationStruct.
              */
-
             $data = [
-                    'id_job'             => $row['id_job'],
-                    'id_segment'         => $row['id'],
-                    'translation_after'  => $row['translation'],
-                    'time'               => $row['time_to_edit'] - ( $row['versioned_time_to_edit'] || 0 )
+                    'id_job'             => $row[ 'id_job' ],
+                    'id_segment'         => $row[ 'id' ],
+                    'translation_after'  => $row[ 'translation' ],
+                    'translation_before' => $this->getTranslationBefore( $row ),
+                    'time'               => $row[ 'time_to_edit' ] - ( $row[ 'versioned_time_to_edit' ] || 0 )
             ];
 
-            /**
-             * Find `translation_before`. This is tricky because this should reflect that the translator
-             * actually found in the edit area when editing the segment, which may or may not be the content
-             * of `segment_translations.translation`.
-             *
-             */
-
-            if ( $this->__isFirstTranslation( $row ) ) {
-                if ( $this->__isPreTranslated( $row ) ) {
-                    $data['translation_before'] = '' . $this->__getOriginalVersion( $row ) ;
-                }
-                else {
-                    $data['translation_before'] = '' . $row['suggestion'];
-                }
-            }
-            else {
-                $data['translation_before'] = '' . $row['versioned_translation'];
-            }
-
-            $data = $this->__setSegmentOrigin( $data, $row );
-
-            $result[ $row['id'] ] = new ExtendedTranslationStruct( $data ) ;
+            $data                   = array_merge($data, $this->getSegmentOrigin( $row ));
+            $result[ $row[ 'id' ] ] = new ExtendedTranslationStruct( $data );
         }
 
-        return $result ;
+        return $result;
     }
 
-    private function __setSegmentOrigin( $data, $row ) {
+    /**
+     * Find `translation_before`. This is tricky because this should reflect that the translator
+     * actually found in the edit area when editing the segment, which may or may not be the content
+     * of `segment_translations.translation`.
+     *
+     */
+    private function getTranslationBefore( $row ) {
+        if ( $this->__isFirstTranslation( $row ) ) {
+            if ( $this->__isPreTranslated( $row ) ) {
+                return $this->__getOriginalVersion( $row );
+            }
+
+            return $row[ 'suggestion' ];
+        }
+
+        return $row[ 'versioned_translation' ];
+    }
+
+    /**
+     * @param $data
+     * @param $row
+     *
+     * @return mixed
+     */
+    private function getSegmentOrigin( $row ) {
+
         if ( !is_null( $row[ 'autopropagated_from' ] ) ) {
-            $data[ 'segment_origin'] = 'TM' ;
-            $data[ 'suggestion_match' ] = '100' ;
-
-            return $data ;
+            return [
+                    'segment_origin' => 'TM',
+                    'suggestion_match' => '100',
+            ];
         }
 
-        if ( empty($row['suggestions_array']) ) {
-            $data[ 'segment_origin'] = 'HT' ;
-
-            return $data ;
+        if ( empty( $row[ 'suggestions_array' ] ) ) {
+            return [
+                    'segment_origin' => 'HT',
+                    'suggestion_match' => null
+            ];
         }
 
-        if ( ( strpos( $row['match_type'], '100%' ) === 0 ) || $row['match_type'] == 'ICE' ) {
-            $data['segment_origin']   = 'TM';
-            $data['suggestion_match'] = '100';
-        }
-        elseif ( strpos( $row['match_type'], '%' ) !== false ) {
-            $data['segment_origin'] = 'TM' ;
-            $data['suggestion_match'] = $row['suggestion_match'];
-        }
-        elseif ( $row['match_type'] == 'MT' ) {
-            $data['segment_origin'] = 'MT' ;
+        $data = [];
+
+        if ( ( strpos( $row[ 'match_type' ], '100%' ) === 0 ) || $row[ 'match_type' ] == 'ICE' ) {
+            $data[ 'segment_origin' ]   = 'TM';
+            $data[ 'suggestion_match' ] = '100';
+        } elseif ( strpos( $row[ 'match_type' ], '%' ) !== false ) {
+            $data[ 'segment_origin' ]   = 'TM';
+            $data[ 'suggestion_match' ] = $row[ 'suggestion_match' ];
+        } elseif ( $row[ 'match_type' ] == 'MT' ) {
+            $data[ 'segment_origin' ] = 'MT';
+            $data[ 'suggestion_match' ] = null;
         }
 
-        if ( !is_null( $row['suggestion'] ) && $row['translation'] !== $row['suggestion'] ) {
+        if ( !is_null( $row[ 'suggestion' ] ) && $row[ 'translation' ] !== $row[ 'suggestion' ] ) {
             // find match for the applied suggestion
-           $suggestions = json_decode( $row['suggestions_array'], true );
-           $selected    = $suggestions[ $row[ 'suggestion_position' ] ] ;
+            $suggestions = json_decode( $row[ 'suggestions_array' ], true );
+            $selected    = $suggestions[ $row[ 'suggestion_position' ] ];
 
-           if ( $selected['created_by'] == 'MT!' ) {
-               $data[ 'segment_origin' ] = 'MT' ;
-               $data[ 'suggestion_match' ] = null ;
-           }
-           else {
-               $data[ 'segment_origin' ] = 'TM' ;
-               $data[ 'suggestion_match'] = str_replace('%', '', $selected[ 'match' ]);
-           }
+            if ( $selected[ 'created_by' ] == 'MT!' ) {
+                return [
+                        'segment_origin' => 'MT',
+                        'suggestion_match' => null
+                ];
+            }
+
+            return [
+                    'segment_origin' => 'TM',
+                    'suggestion_match' => str_replace( '%', '', $selected[ 'match' ] )
+            ];
         }
 
-        return $data ;
+        return $data;
     }
 
+    /**
+     * @param $row
+     *
+     * @return mixed
+     */
     private function __getOriginalVersion( $row ) {
-        return is_null( $row['versioned_translation'] ) ? $row['translation'] : $row['versioned_translation'] ;
+        return is_null( $row[ 'versioned_translation' ] ) ? $row[ 'translation' ] : $row[ 'versioned_translation' ];
     }
 
+    /**
+     * @param $row
+     *
+     * @return bool
+     */
     private function __isPreTranslated( $row ) {
-        return $row['match_type'] == 'ICE' && $row['locked'] == 0 ;
+        return $row[ 'match_type' ] == 'ICE' && $row[ 'locked' ] == 0;
     }
 
+    /**
+     * @param $row
+     *
+     * @return bool
+     */
     private function __isFirstTranslation( $row ) {
-        return is_null( $row['current_version'] ) || $row['current_version'] == 0 ;
+        return is_null( $row[ 'current_version' ] ) || $row[ 'current_version' ] == 0;
     }
 
 

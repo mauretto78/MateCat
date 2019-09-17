@@ -88,6 +88,7 @@ class SegmentTranslationService extends AbstractService {
         $request->segmentOriginId   = $convertedForDqfArray['segmentOriginId'];
         $request->matchRate         = $convertedForDqfArray['matchRate'];
         $request->indexNo           = $convertedForDqfArray['indexNo'];
+        $request->time              = $convertedForDqfArray['time'];
 
         return $request;
     }

@@ -43,7 +43,5 @@ class MetadataModel {
         foreach( $this->metadata as $key => $value ) {
             $dao->set($this->user->uid, $key, $value);
         }
-
     }
-
 }

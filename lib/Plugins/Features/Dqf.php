@@ -80,24 +80,6 @@ class Dqf extends BaseFeature {
         return $filters;
     }
 
-    public function filterValidateUserMetadata( $metadata, $params ) {
-
-        if ( !empty( $metadata[ 'dqf_username' ] ) && !empty( $metadata[ 'dqf_password' ] ) ) {
-            try {
-                /** @var Session $session */
-                $session = SessionProvider::getByCredentials( $metadata[ 'dqf_username' ], $metadata[ 'dqf_password' ] );
-
-                // update metadata to persist into DB
-                $metadata[ 'dqf_session_id' ]      = $session->getSessionId();
-                $metadata[ 'dqf_session_expires' ] = $session->getExpires();
-            } catch ( AuthenticationError $e ) {
-                throw new ValidationError( 'DQF credentials are not valid' );
-            }
-        }
-
-        return $metadata;
-    }
-
     /**
      * @param $inputFilter
      *
@@ -112,6 +94,7 @@ class Dqf extends BaseFeature {
      * @param $options
      *
      * @return array
+     * @throws \Exception
      */
     public function createProjectAssignInputMetadata( $metadata, $options ) {
         $options = Utils::ensure_keys( $options, [ 'input' ] );
@@ -123,9 +106,11 @@ class Dqf extends BaseFeature {
     }
 
     /**
-     * @param Chunks_ChunkStruct                      $chunk
-     * @param ProjectCompletion\CompletionEventStruct $params
-     * @param                                         $lastId
+     * @param Chunks_ChunkStruct    $chunk
+     * @param CompletionEventStruct $params
+     * @param                       $lastId
+     *
+     * @throws \Exception
      */
     public function project_completion_event_saved( Chunks_ChunkStruct $chunk, CompletionEventStruct $params, $lastId ) {
         // at this point we have to enqueue delivery to DQF of the translated or reviewed segments
@@ -185,6 +170,8 @@ class Dqf extends BaseFeature {
 
     /**
      * @param $projectStructure
+     *
+     * @throws \StompException
      */
     public function postProjectCommit( $projectStructure ) {
         $struct = new ProjectCreationStruct( [
@@ -198,7 +185,6 @@ class Dqf extends BaseFeature {
     }
 
     public static function loadRoutes( Klein $klein ) {
-
     }
 
     /**
@@ -233,6 +219,11 @@ class Dqf extends BaseFeature {
         return $dependencies;
     }
 
+    /**
+     * @param $projectStructure
+     *
+     * @throws \Exception
+     */
     public function validateProjectCreation( $projectStructure ) {
 
         if ( count( $projectStructure[ 'target_language' ] ) > 1 ) {
