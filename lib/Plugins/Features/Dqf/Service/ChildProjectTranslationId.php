@@ -4,7 +4,6 @@ namespace Features\Dqf\Service;
 
 use Exception;
 use Features\Dqf\Utils\Functions;
-use Files_FileStruct;
 use INIT;
 
 class ChildProjectTranslationId {

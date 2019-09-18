@@ -1,6 +1,6 @@
 <?php
 
-namespace Features\Dqf\Service;
+namespace Features\Dqf\Utils;
 
 class AuthenticatorDataEncryptor {
 

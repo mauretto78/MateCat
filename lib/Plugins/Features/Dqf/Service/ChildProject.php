@@ -19,7 +19,7 @@ use Features\Dqf\Service\Struct\Response\MaserFileCreationResponseStruct;
 use Features\Dqf\Service\Struct\Response\ProjectResponseStruct;
 use Features\Dqf\Utils\Functions;
 
-class ChildProjectService {
+class ChildProject {
     const TRANSLATION = 'translation';
     const REVIEW      = 'review';
 
@@ -37,12 +37,25 @@ class ChildProjectService {
 
     protected $clientId;
 
+    /**
+     * ChildProject constructor.
+     *
+     * @param ISession           $session
+     * @param Chunks_ChunkStruct $chunk
+     * @param                    $id_project
+     */
     public function __construct( ISession $session, Chunks_ChunkStruct $chunk, $id_project ) {
         $this->chunk    = $chunk;
         $this->session  = $session;
         $this->clientId = $id_project;
     }
 
+    /**
+     * @param ChildProjectRequestStruct $struct
+     *
+     * @return array
+     * @throws Exception
+     */
     public function deleteProject( ChildProjectRequestStruct $struct ) {
         $client = new Client();
         $client->setSession( $this->session );
@@ -65,6 +78,12 @@ class ChildProjectService {
         return $returnable;
     }
 
+    /**
+     * @param $requestStructs
+     *
+     * @return array
+     * @throws Exception
+     */
     public function updateChildProjects( $requestStructs ) {
         $client = new Client();
         $client->setSession( $this->session );
@@ -91,6 +110,12 @@ class ChildProjectService {
         return $returnable;
     }
 
+    /**
+     * @param ChildProjectRequestStruct $requestStruct
+     *
+     * @return bool|string|null
+     * @throws Exception
+     */
     public function setCompleted( ChildProjectRequestStruct $requestStruct ) {
         $client = new Client();
         $client->setSession( $this->session );
@@ -115,6 +140,12 @@ class ChildProjectService {
         }
     }
 
+    /**
+     * @param $requestStructs
+     *
+     * @return array
+     * @throws Exception
+     */
     public function getRemoteResources( $requestStructs ) {
         $client = new Client();
         $client->setSession( $this->session );
@@ -171,7 +202,7 @@ class ChildProjectService {
     /**
      * Creates a translation child for the given input parent project.
      *
-     * @param CreateProjectResponseStruct       $parent
+     * @param DqfProjectMapStruct               $parent
      * @param MaserFileCreationResponseStruct[] $remoteFiles
      *
      * @return CreateProjectResponseStruct
@@ -185,6 +216,13 @@ class ChildProjectService {
         return $this->createChild( $parent, $remoteFiles, $projectStruct );
     }
 
+    /**
+     * @param DqfProjectMapStruct $parent
+     * @param                     $remoteFiles
+     *
+     * @return CreateProjectResponseStruct
+     * @throws Exception
+     */
     public function createRevisionChild( DqfProjectMapStruct $parent, $remoteFiles ) {
         $projectStruct                  = new ChildProjectRequestStruct();
         $projectStruct->type            = self::REVIEW;

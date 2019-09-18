@@ -2,7 +2,6 @@
 
 namespace Features\Dqf\Service;
 
-use API\V2\Exceptions\AuthenticationError;
 use Exception;
 use Features\Dqf\Exception\SessionProviderException;
 use Features\Dqf\Model\UserModel;

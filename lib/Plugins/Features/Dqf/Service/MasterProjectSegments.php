@@ -16,7 +16,7 @@ use Features\Dqf\Service\Struct\Response\SourceSegmentsBatchResponseStruct;
 use Features\Dqf\Utils\Functions;
 use Segments_SegmentDao;
 
-class MasterProjectSegmentsBatch {
+class MasterProjectSegments {
 
     /**
      * @var Session

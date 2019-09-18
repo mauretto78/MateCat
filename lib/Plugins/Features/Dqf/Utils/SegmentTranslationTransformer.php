@@ -117,7 +117,7 @@ class SegmentTranslationTransformer {
         $is_review = ( $this->getProjectType( $translation ) == DqfProjectMapDao::PROJECT_TYPE_REVISE );
         $prevEvent = \Chunks_ChunkCompletionEventDao::lastCompletionRecord( $chunk, [ 'is_review' => !$is_review ] );
 
-        return ($prevEvent) ? $prevEvent[ 'create_date' ] : $chunk->getProject()->create_date;
+        return ( $prevEvent ) ? $prevEvent[ 'create_date' ] : $chunk->getProject()->create_date;
     }
 
     /**
@@ -158,10 +158,10 @@ class SegmentTranslationTransformer {
      * @throws \Exception
      */
     private function getRemoteFileId( $session, $fileId ) {
-        $file    = \Files_FileDao::getById( $fileId );
-        $service = new FileIdMapping( $session, $file );
+        $file          = \Files_FileDao::getById( $fileId );
+        $fileIdMapping = new FileIdMapping( $session, $file );
 
-        return $service->getRemoteId();
+        return $fileIdMapping->getRemoteId();
     }
 
     /**

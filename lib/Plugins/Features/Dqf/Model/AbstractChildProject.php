@@ -10,8 +10,7 @@ namespace Features\Dqf\Model;
 
 
 use Exception;
-use Features\Dqf\Service\Authenticator;
-use Features\Dqf\Service\ChildProjectService;
+use Features\Dqf\Service\ChildProject;
 use Features\Dqf\Service\FileIdMapping;
 use Features\Dqf\Service\ISession;
 use Features\Dqf\Service\SessionProvider;
@@ -27,45 +26,45 @@ abstract class AbstractChildProject {
     /**
      * @var \Chunks_ChunkStruct
      */
-    protected $chunk ;
+    protected $chunk;
 
     /** * @var ProjectMapResolverModel */
-    protected $dqfProjectMapResolver  ;
+    protected $dqfProjectMapResolver;
 
     /** * @var DqfProjectMapStruct[] */
     protected $dqfChildProjects = [];
 
     /** * @var UserModel */
-    protected $dqfUser ;
+    protected $dqfUser;
 
     /** * @var ISession */
-    protected $userSession ;
+    protected $userSession;
 
     /** * @var Files_FileStruct[] */
-    protected $files ;
+    protected $files;
 
     public function __construct( $chunk, $type ) {
         $this->chunk = $chunk;
-        $this->type = $type ;
+        $this->type  = $type;
 
         $this->dqfProjectMapResolver = new ProjectMapResolverModel( $this->chunk, $type );
-        $this->dqfChildProjects = $this->dqfProjectMapResolver->getMappedProjects();
+        $this->dqfChildProjects      = $this->dqfProjectMapResolver->getMappedProjects();
 
-        $this->_initUserAndSession() ;
+        $this->_initUserAndSession();
     }
 
     public function setCompleted() {
         /** @var DqfProjectMapStruct $project */
-        foreach( $this->dqfChildProjects as $project ) {
-            $service = new ChildProjectService(
-                    $this->userSession, $this->chunk, $project->id ) ;
+        foreach ( $this->dqfChildProjects as $project ) {
+            $childProject = new ChildProject(
+                    $this->userSession, $this->chunk, $project->id );
 
-            $struct = new ChildProjectRequestStruct([
-                    'projectId' => $project->dqf_project_id,
+            $struct = new ChildProjectRequestStruct( [
+                    'projectId'  => $project->dqf_project_id,
                     'projectKey' => $project->dqf_project_uuid
-            ]);
+            ] );
 
-            $service->setCompleted( $struct );
+            $childProject->setCompleted( $struct );
         }
     }
 
@@ -75,14 +74,14 @@ abstract class AbstractChildProject {
     protected function _initUserAndSession() {
         $uid = ( new MetadataDao() )
                 ->get( $this->chunk->id, $this->chunk->password, $this->_getMetadataUserKey() )
-                ->value ;
+                ->value;
 
         if ( !$uid ) {
             throw new Exception( $this->_getMetadataUserKey() . ' must be set' );
         }
 
         $this->dqfUser     = new UserModel( ( new Users_UserDao() )->getByUid( $uid ) );
-        $this->userSession = SessionProvider::getByUserId($uid);
+        $this->userSession = SessionProvider::getByUserId( $uid );
     }
 
     /**
@@ -91,47 +90,47 @@ abstract class AbstractChildProject {
     protected function _getMetadataUserKey() {
         return $this->type == 'translate' ?
                 CatAuthorizationModel::DQF_TRANSLATE_USER :
-                CatAuthorizationModel::DQF_REVISE_USER ;
+                CatAuthorizationModel::DQF_REVISE_USER;
     }
 
     protected function createRemoteProjects() {
         $parents = $this->dqfProjectMapResolver->getParents();
 
-        $this->dqfChildProjects = [] ;
+        $this->dqfChildProjects = [];
 
-        foreach( $parents as $parent ) {
-            $project = new ChildProjectCreationModel($parent, $this->chunk, $this->type  );
+        foreach ( $parents as $parent ) {
+            $project = new ChildProjectCreationModel( $parent, $this->chunk, $this->type );
 
             $model = new ProjectModel( $parent );
 
             $project->setUser( $this->dqfUser );
-            $project->setFiles( $model->getFilesResponseStruct() ) ;
+            $project->setFiles( $model->getFilesResponseStruct() );
 
             $project->create();
 
             // TODO: not sure this assignment is really helpful
             // reloading the projectMapper should be enough
-            $this->dqfChildProjects[]  = $project->getSavedRecord() ;
+            $this->dqfChildProjects[] = $project->getSavedRecord();
 
             $this->dqfProjectMapResolver->reload();
         }
     }
 
     protected function projectCreationRequired() {
-        return empty( $this->dqfChildProjects ) ;
+        return empty( $this->dqfChildProjects );
     }
 
     public function createRemoteProjectsAndSubmit() {
         if ( $this->projectCreationRequired() ) {
             $this->createRemoteProjects();
         }
-        $this->_submitData() ;
+        $this->_submitData();
         $this->dqfProjectMapResolver->archiveInverseType();
 
     }
 
 
-    abstract protected function _submitData() ;
+    abstract protected function _submitData();
 
     /**
      * @param Files_FileStruct $file
@@ -140,9 +139,9 @@ abstract class AbstractChildProject {
      * @throws Exception
      */
     protected function _findRemoteFileId( Files_FileStruct $file ) {
-        $service = new FileIdMapping( $this->userSession, $file ) ;
+        $fileIdMapping = new FileIdMapping( $this->userSession, $file );
 
-        return $service->getRemoteId() ;
+        return $fileIdMapping->getRemoteId();
     }
 
 }

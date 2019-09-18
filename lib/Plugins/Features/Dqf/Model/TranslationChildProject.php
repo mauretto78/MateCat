@@ -6,7 +6,7 @@ use Chunks_ChunkStruct;
 use Exception;
 use Features\Dqf\Model\CachedAttributes\SegmentOrigin;
 use Features\Dqf\Service\Struct\Request\ChildProjectTranslationRequestStruct;
-use Features\Dqf\Service\TranslationBatchService;
+use Features\Dqf\Service\TranslationBatch;
 use Features\Dqf\Utils\Functions;
 use Features\Dqf\Utils\SegmentTranslationTransformer;
 use INIT;
@@ -75,9 +75,9 @@ class TranslationChildProject extends AbstractChildProject {
      */
     protected function _submitData() {
 
-        $this->files              = $this->chunk->getFiles();
-        $service                  = new TranslationBatchService( $this->userSession );
-        $segmentTranslationHelper = new SegmentTranslationTransformer( $this->userSession );
+        $this->files                   = $this->chunk->getFiles();
+        $translationBatch              = new TranslationBatch( $this->userSession );
+        $segmentTranslationTransformer = new SegmentTranslationTransformer( $this->userSession );
 
         foreach ( $this->files as $file ) {
             list ( $fileMinIdSegment, $fileMaxIdSegment ) = $file->getMaxMinSegmentBoundariesForChunk( $this->chunk );
@@ -96,7 +96,7 @@ class TranslationChildProject extends AbstractChildProject {
                 // Now we have translations, make the actual call, one per file per project
                 $segmentPairs = [];
                 foreach ( $translations as $translation ) {
-                    $convertedForDqfArray = $segmentTranslationHelper->transform( $translation );
+                    $convertedForDqfArray = $segmentTranslationTransformer->transform( $translation );
                     $segmentPairs[]       = ( new SegmentPairStruct( [
                             "sourceSegmentId"   => $convertedForDqfArray[ 'sourceSegmentId' ],
                             "clientId"          => $convertedForDqfArray[ 'clientId' ],
@@ -123,12 +123,12 @@ class TranslationChildProject extends AbstractChildProject {
 
                     $requestStruct->setSegments( $segmentParisChunk );
 
-                    $service->addRequestStruct( $requestStruct );
+                    $translationBatch->addRequestStruct( $requestStruct );
                 }
             }
         }
 
-        $results = $service->process();
+        $results = $translationBatch->process();
         $this->_saveResults( $results );
     }
 

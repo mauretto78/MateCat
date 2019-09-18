@@ -4,7 +4,6 @@ namespace Features;
 
 use AbstractControllers\IController;
 use AMQHandler;
-use API\V2\Exceptions\AuthenticationError;
 use BasicFeatureStruct;
 use Chunks_ChunkStruct;
 use Exceptions\ValidationError;
@@ -12,8 +11,7 @@ use Features;
 use Features\Dqf\Model\RevisionChildProject;
 use Features\Dqf\Model\TranslationChildProject;
 use Features\Dqf\Model\UserModel;
-use Features\Dqf\Service\SegmentTranslationService;
-use Features\Dqf\Service\Session;
+use Features\Dqf\Service\ChildProjectSegmentTranslation;
 use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\ProjectCreationStruct;
 use Features\Dqf\Utils\ProjectMetadata;
@@ -312,9 +310,9 @@ class Dqf extends BaseFeature {
             $translation = $params[ 'translation' ];
 
             try {
-                $session                   = SessionProvider::getByUserId( $user->getUid() );
-                $segmentTranslationService = new SegmentTranslationService( $session, $translation );
-                $segmentTranslationService->process();
+                $session            = SessionProvider::getByUserId( $user->getUid() );
+                $segmentTranslation = new ChildProjectSegmentTranslation( $session, $translation );
+                $segmentTranslation->process();
             } catch ( \Exception $e ) {
                 \Log::doJsonLog( "Segment with ID  " . $segment->id . " cannot be sent to DQF." );
             }

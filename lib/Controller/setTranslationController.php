@@ -645,15 +645,13 @@ class setTranslationController extends ajaxController {
 
         // If volume analysis is not enabled and no translation rows exists, create the row
         if ( !INIT::$VOLUME_ANALYSIS_ENABLED && empty( $old_translation[ 'status' ] ) ) {
-            $translation             = new Translations_SegmentTranslationStruct();
-            $translation->id_segment = (int)$this->id_segment;
-            $translation->id_job     = (int)$this->id_job;
-            $translation->status     = Constants_TranslationStatus::STATUS_NEW;
-
-            $translation->segment_hash        = $this->segment[ 'segment_hash' ];
-            $translation->translation         = $this->segment[ 'segment' ];
-            $translation->standard_word_count = $this->segment[ 'raw_word_count' ];
-
+            $translation                         = new Translations_SegmentTranslationStruct();
+            $translation->id_segment             = (int)$this->id_segment;
+            $translation->id_job                 = (int)$this->id_job;
+            $translation->status                 = Constants_TranslationStatus::STATUS_NEW;
+            $translation->segment_hash           = $this->segment[ 'segment_hash' ];
+            $translation->translation            = $this->segment[ 'segment' ];
+            $translation->standard_word_count    = $this->segment[ 'raw_word_count' ];
             $translation->serialized_errors_list = '';
             $translation->suggestion_position    = 0;
             $translation->warning                = false;

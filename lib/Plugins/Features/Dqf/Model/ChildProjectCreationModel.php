@@ -12,7 +12,7 @@ namespace Features\Dqf\Model;
 use Chunks_ChunkStruct;
 use Database;
 use Exception;
-use Features\Dqf\Service\ChildProjectService;
+use Features\Dqf\Service\ChildProject;
 use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
 use Utils;
@@ -110,27 +110,34 @@ class ChildProjectCreationModel {
             throw new Exception( 'User is not set' );
         }
 
-        if ( in_array( $this->project_type, [ 'translate', 'vendor_root' ] ) ) {
-            $remoteProject = $this->createForTranslation();
-        } else {
-            $remoteProject = $this->createForRevision();
-        }
-
+        $remoteProject = $this->createRemoteProject( $this->project_type );
         $this->_saveDqfChildProjectMap( $this->chunk, $remoteProject );
 
         return $remoteProject;
     }
 
     /**
+     * @param $projectType
+     *
      * @return CreateProjectResponseStruct
-     * @throws \API\V2\Exceptions\AuthenticationError
+     * @throws Exception
+     */
+    private function createRemoteProject( $projectType ) {
+        if ( in_array( $projectType, [ 'translate', 'vendor_root' ] ) ) {
+            return $this->createForTranslation();
+        }
+
+        return $this->createForRevision();
+    }
+
+    /**
+     * @return CreateProjectResponseStruct
+     * @throws Exception
      */
     protected function createForRevision() {
-        $projectService = new ChildProjectService( SessionProvider::getByUserId( $this->user->getUid() ), $this->chunk, $this->id_project );
+        $childProject = new ChildProject( SessionProvider::getByUserId( $this->user->getUid() ), $this->chunk, $this->id_project );
 
-        return $projectService->createRevisionChild(
-                $this->parentProject, $this->files
-        );
+        return $childProject->createRevisionChild( $this->parentProject, $this->files );
     }
 
     /**
@@ -138,11 +145,9 @@ class ChildProjectCreationModel {
      * @throws Exception
      */
     protected function createForTranslation() {
-        $projectService = new ChildProjectService( SessionProvider::getByUserId( $this->user->getUid() ), $this->chunk, $this->id_project );
+        $childProject = new ChildProject( SessionProvider::getByUserId( $this->user->getUid() ), $this->chunk, $this->id_project );
 
-        return $projectService->createTranslationChild(
-                $this->parentProject, $this->files
-        );
+        return $childProject->createTranslationChild( $this->parentProject, $this->files );
     }
 
     public function getSavedRecord() {

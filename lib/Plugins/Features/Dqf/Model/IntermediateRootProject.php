@@ -12,9 +12,9 @@ use Features\Dqf;
 use Features\Dqf\Service\MasterProject;
 use Features\Dqf\Service\MasterProjectFiles;
 use Features\Dqf\Service\ProjectMapping;
+use Features\Dqf\Service\SessionProvider;
 use Features\Dqf\Service\Struct\CreateProjectResponseStruct;
 use Projects_ProjectStruct;
-use Features\Dqf\Service\SessionProvider;
 
 class IntermediateRootProject {
 

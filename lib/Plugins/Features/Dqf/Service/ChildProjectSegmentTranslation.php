@@ -5,8 +5,7 @@ namespace Features\Dqf\Service;
 use Features\Dqf\Service\Struct\Request\ChildProjectSegmentTranslationRequestStruct;
 use Features\Dqf\Utils\SegmentTranslationTransformer;
 
-class SegmentTranslationService extends AbstractService {
-
+class ChildProjectSegmentTranslation extends AbstractService {
 
     /**
      * @var \Translations_SegmentTranslationStruct
@@ -32,6 +31,8 @@ class SegmentTranslationService extends AbstractService {
     }
 
     /**
+     * Update a single segment translation on DQF
+     *
      * For further documentation, please see:
      * https://dqf-api.stag.taus.net/#!/Project%2FChild%2FFile%2FTarget_Language%2FSegment/update_0
      *
@@ -61,9 +62,6 @@ class SegmentTranslationService extends AbstractService {
     }
 
     /**
-     * @param ISession $session
-     * @param array    $params
-     *
      * @return ChildProjectSegmentTranslationRequestStruct
      * @throws \Exception
      */

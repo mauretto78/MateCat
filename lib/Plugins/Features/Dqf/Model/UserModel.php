@@ -10,12 +10,11 @@ namespace Features\Dqf\Model;
 
 use API\V2\Exceptions\AuthenticationError;
 use Exception;
-use Features\Dqf\Service\Authenticator;
 use Features\Dqf\Service\GenericSession;
 use Features\Dqf\Service\ISession;
 use Features\Dqf\Service\Session;
-use Users_UserStruct;
 use Features\Dqf\Service\SessionProvider;
+use Users_UserStruct;
 
 class UserModel {
 

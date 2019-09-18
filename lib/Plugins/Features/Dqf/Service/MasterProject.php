@@ -76,4 +76,12 @@ class MasterProject {
 
     }
 
+    /**
+     * Delete the project from DQF and all of its childs
+     *
+     * @param $projectId
+     */
+    public function delete($projectId){
+
+    }
 }

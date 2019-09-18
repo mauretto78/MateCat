@@ -6,8 +6,7 @@ use API\V2\Exceptions\AuthenticationError;
 use Features\Dqf\Service\Struct\LoginRequestStruct;
 use Features\Dqf\Service\Struct\LoginResponseStruct;
 use Features\Dqf\Service\Struct\LogoutRequestStruct;
-use Features\Dqf\Utils\UserMetadata;
-use Users\MetadataDao;
+use Features\Dqf\Utils\AuthenticatorDataEncryptor;
 
 class Authenticator {
 
@@ -26,9 +25,9 @@ class Authenticator {
      *
      * @param ISession|null $session
      */
-    public function __construct(ISession $session = null) {
-        $this->session = (isset($session)) ? $session : new Session();
-        $this->client = new Client();
+    public function __construct( ISession $session = null ) {
+        $this->session = ( isset( $session ) ) ? $session : new Session();
+        $this->client  = new Client();
     }
 
     /**
@@ -38,8 +37,8 @@ class Authenticator {
      * @return Session
      * @throws AuthenticationError
      */
-    public function login($email, $password) {
-        $struct           = new LoginRequestStruct() ;
+    public function login( $email, $password ) {
+        $struct           = new LoginRequestStruct();
         $struct->email    = AuthenticatorDataEncryptor::encrypt( $email );
         $struct->password = AuthenticatorDataEncryptor::encrypt( $password );
 
@@ -59,17 +58,10 @@ class Authenticator {
 
         \Log::doJsonLog( " SessionId " . $response->sessionId );
 
-//        $metaDao = new MetadataDao();
-//        $uid = $metaDao->getUidByDqfUsernameAndPassword($email, $password);
-//        if(null !== $uid){
-//            $metaDao->set($uid, 'dqf_session_id', $response->sessionId);
-//            $metaDao->set($uid, 'dqf_session_expires', (int)(strtotime("now") + (int)$response->expires) );
-//        }
-
         $this->session->setEmail( $email );
         $this->session->setPassword( $password );
         $this->session->setSessionId( $response->sessionId );
-        $this->session->setExpires( (int)(strtotime("now") + (int)$response->expires) );
+        $this->session->setExpires( (int)( strtotime( "now" ) + (int)$response->expires ) );
 
         return $this->session;
     }
@@ -82,8 +74,8 @@ class Authenticator {
      * @throws AuthenticationError
      */
     public function logout() {
-        $struct           = new LogoutRequestStruct();
-        $struct->email    = AuthenticatorDataEncryptor::encrypt( $this->session->getEmail() );
+        $struct            = new LogoutRequestStruct();
+        $struct->email     = AuthenticatorDataEncryptor::encrypt( $this->session->getEmail() );
         $struct->sessionId = $this->session->getSessionId();
 
         $request = $this->client->createResource( '/logout', 'post', [

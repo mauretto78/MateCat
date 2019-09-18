@@ -1,19 +1,12 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fregini
- * Date: 08/08/2017
- * Time: 15:44
- */
 
 namespace Features\Dqf\Service;
-
 
 use Exception;
 use Features\Dqf\Service\Struct\Request\RevisionRequestStruct;
 use Log;
 
-class ChildProjectRevisionBatchService  {
+class ChildProjectRevisionBatch  {
 
     /** @var ISession */
     protected  $session ;
