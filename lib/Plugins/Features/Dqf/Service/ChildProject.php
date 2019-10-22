@@ -278,7 +278,7 @@ class ChildProject {
         $client->curl()->multiExec();
 
         if ( count( $client->curl()->getErrors() ) > 0 ) {
-            throw new Exception( 'Error in creation of target langauge for files: ' . implode( $client->curl()->getAllContents() ) );
+            throw new Exception( 'Error in creation of target language for files: ' . implode( $client->curl()->getAllContents() ) );
         }
     }
 

@@ -42,7 +42,7 @@ class DqfQualityModel {
     public function getReviewSettings() {
 
         $struct = new ReviewSettingsRequestStruct();
-        $struct->reviewType        = 'error_typology';
+        $struct->reviewType        = 'combined'; //
         $struct->severityWeights   = $this->getSeverities() ;
         $struct->sampling          = 100 ;
         $struct->passFailThreshold = $this->getPassFailThreshold();

@@ -53,7 +53,7 @@ class Client {
      *
      * @return string
      */
-    public function createResource( $path, $method, $options = array(), $resourceId = null ) {
+    public function   createResource( $path, $method, $options = array(), $resourceId = null ) {
 
         if ( !isset( $options['pathParams'] ) ) {
             $options['pathParams'] = [];

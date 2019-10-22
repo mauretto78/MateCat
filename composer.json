@@ -7,6 +7,7 @@
     "require": {
         "google/apiclient": "1.1.7",
         "klein/klein": "^2.1",
+        "matecat/dqf-integrator": "^1.0",
         "matecat/simple-s3": "^1.5",
         "matecat/whole-text-finder": "^1.0",
         "monolog/monolog": "1.17.*",

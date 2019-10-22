@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "057d277a5884b584d175905175b1a8a0",
+    "content-hash": "59a904b181a6be1a94d71bdbbcb9e9d1",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.110.8",
+            "version": "3.112.22",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "1c4ec294479c0ab1d231431b04b2b2f14a72407f"
+                "reference": "bf9370f1b2833f2db7d1d051a79d71e71c5e6fb0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/1c4ec294479c0ab1d231431b04b2b2f14a72407f",
-                "reference": "1c4ec294479c0ab1d231431b04b2b2f14a72407f",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/bf9370f1b2833f2db7d1d051a79d71e71c5e6fb0",
+                "reference": "bf9370f1b2833f2db7d1d051a79d71e71c5e6fb0",
                 "shasum": ""
             },
             "require": {
@@ -87,7 +87,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2019-09-03T19:34:31+00:00"
+            "time": "2019-10-15T18:12:28+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -435,6 +435,64 @@
             "time": "2017-02-01T23:08:58+00:00"
         },
         {
+            "name": "matecat/dqf-integrator",
+            "version": "v1.0.14",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/matecat/dqf-integrator.git",
+                "reference": "16bb725afe67fa05c71b6674091e9cb1f1e32425"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/16bb725afe67fa05c71b6674091e9cb1f1e32425",
+                "reference": "16bb725afe67fa05c71b6674091e9cb1f1e32425",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^6.3",
+                "monolog/monolog": "^1.0",
+                "php": ">=5.5",
+                "shrikeh/teapot": "^2.3"
+            },
+            "require-dev": {
+                "ext-pdo": "*",
+                "friendsofphp/php-cs-fixer": "^2.15",
+                "fzaninotto/faker": "^1.8",
+                "phpstan/phpstan": "^0.11.12",
+                "phpunit/phpunit": "~5.7",
+                "predis/predis": "^1.1",
+                "ramsey/uuid": "^3.8",
+                "robmorgan/phinx": "^0.11.1",
+                "symfony/console": "^3.4.17 || ^4.1.6"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Matecat\\Dqf\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mauro Cassani",
+                    "email": "maurocassani1978@gmail.com",
+                    "homepage": "https://github.com/mauretto78"
+                }
+            ],
+            "description": "A library for an easy integrator of DQF in PHP applications",
+            "homepage": "https://github.com/matecat/dqf-integrator",
+            "keywords": [
+                "client",
+                "dqf",
+                "php"
+            ],
+            "time": "2019-10-15T12:10:58+00:00"
+        },
+        {
             "name": "matecat/simple-s3",
             "version": "v1.5.3",
             "source": {
@@ -492,16 +550,16 @@
         },
         {
             "name": "matecat/whole-text-finder",
-            "version": "v1.0.6",
+            "version": "v1.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/whole-text-finder.git",
-                "reference": "fa43102b8f8be0cf0839e30d223b8292e11ae314"
+                "reference": "9718ee69fbb2e91fc06504bcc2ab634cfdaf5370"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/whole-text-finder/zipball/fa43102b8f8be0cf0839e30d223b8292e11ae314",
-                "reference": "fa43102b8f8be0cf0839e30d223b8292e11ae314",
+                "url": "https://api.github.com/repos/matecat/whole-text-finder/zipball/9718ee69fbb2e91fc06504bcc2ab634cfdaf5370",
+                "reference": "9718ee69fbb2e91fc06504bcc2ab634cfdaf5370",
                 "shasum": ""
             },
             "require": {
@@ -537,7 +595,7 @@
                 "search",
                 "text"
             ],
-            "time": "2019-09-04T16:06:50+00:00"
+            "time": "2019-10-14T13:30:41+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -998,6 +1056,59 @@
             "time": "2019-03-08T08:55:37+00:00"
         },
         {
+            "name": "shrikeh/teapot",
+            "version": "v2.3.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/shrikeh/teapot.git",
+                "reference": "2fea5720963f22eedb920ee65b9d643bfa3e8daf"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/shrikeh/teapot/zipball/2fea5720963f22eedb920ee65b9d643bfa3e8daf",
+                "reference": "2fea5720963f22eedb920ee65b9d643bfa3e8daf",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5",
+                "psr/http-message": "^1.0",
+                "teapot/status-code": "^1.0"
+            },
+            "require-dev": {
+                "behat/behat": "^3.2",
+                "bossa/phpspec2-expect": "^2.0",
+                "escapestudios/symfony2-coding-standard": "^2.9",
+                "phpspec/phpspec": "~3.0.0",
+                "squizlabs/php_codesniffer": "^2.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Teapot\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Barney Hanlon",
+                    "email": "barney@shrikeh.net"
+                },
+                {
+                    "name": "Andreas Möller",
+                    "email": "am@localheinz.com"
+                }
+            ],
+            "description": "PHP HTTP Response Status library",
+            "homepage": "https://shrikeh.github.io/teapot/",
+            "keywords": [
+                "http"
+            ],
+            "time": "2017-09-01T13:56:48+00:00"
+        },
+        {
             "name": "symfony/console",
             "version": "v2.8.50",
             "source": {
@@ -1281,6 +1392,50 @@
                 "shim"
             ],
             "time": "2019-08-06T08:03:45+00:00"
+        },
+        {
+            "name": "teapot/status-code",
+            "version": "v1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/teapot-php/status-code.git",
+                "reference": "3f8e4cf0b185c1192dcf11ce4482380dcbd6e847"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/teapot-php/status-code/zipball/3f8e4cf0b185c1192dcf11ce4482380dcbd6e847",
+                "reference": "3f8e4cf0b185c1192dcf11ce4482380dcbd6e847",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.4"
+            },
+            "require-dev": {
+                "escapestudios/symfony2-coding-standard": "^3.0",
+                "squizlabs/php_codesniffer": "^3.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Teapot\\StatusCode\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Barney Hanlon",
+                    "email": "barney@shrikeh.net"
+                }
+            ],
+            "description": "PHP HTTP Response Status code library",
+            "homepage": "http://shrikeh.github.com/teapot",
+            "keywords": [
+                "http"
+            ],
+            "time": "2018-01-15T19:17:51+00:00"
         }
     ],
     "packages-dev": [
@@ -1340,16 +1495,16 @@
         },
         {
             "name": "onelogin/php-saml",
-            "version": "2.16.0",
+            "version": "2.17.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/onelogin/php-saml.git",
-                "reference": "e16161d89067866cabb6dd4f5ccd1437b6a64eda"
+                "reference": "2aaa5aaa9aa6d6887fbd15be0013dd7fac793fc9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/onelogin/php-saml/zipball/e16161d89067866cabb6dd4f5ccd1437b6a64eda",
-                "reference": "e16161d89067866cabb6dd4f5ccd1437b6a64eda",
+                "url": "https://api.github.com/repos/onelogin/php-saml/zipball/2aaa5aaa9aa6d6887fbd15be0013dd7fac793fc9",
+                "reference": "2aaa5aaa9aa6d6887fbd15be0013dd7fac793fc9",
                 "shasum": ""
             },
             "require": {
@@ -1389,7 +1544,7 @@
                 "onelogin",
                 "saml"
             ],
-            "time": "2019-06-24T17:43:15+00:00"
+            "time": "2019-09-11T13:55:25+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",
@@ -1539,22 +1694,22 @@
         },
         {
             "name": "phpspec/prophecy",
-            "version": "1.8.1",
+            "version": "1.9.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpspec/prophecy.git",
-                "reference": "1927e75f4ed19131ec9bcc3b002e07fb1173ee76"
+                "reference": "f6811d96d97bdf400077a0cc100ae56aa32b9203"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/1927e75f4ed19131ec9bcc3b002e07fb1173ee76",
-                "reference": "1927e75f4ed19131ec9bcc3b002e07fb1173ee76",
+                "url": "https://api.github.com/repos/phpspec/prophecy/zipball/f6811d96d97bdf400077a0cc100ae56aa32b9203",
+                "reference": "f6811d96d97bdf400077a0cc100ae56aa32b9203",
                 "shasum": ""
             },
             "require": {
                 "doctrine/instantiator": "^1.0.2",
                 "php": "^5.3|^7.0",
-                "phpdocumentor/reflection-docblock": "^2.0|^3.0.2|^4.0",
+                "phpdocumentor/reflection-docblock": "^2.0|^3.0.2|^4.0|^5.0",
                 "sebastian/comparator": "^1.1|^2.0|^3.0",
                 "sebastian/recursion-context": "^1.0|^2.0|^3.0"
             },
@@ -1598,7 +1753,7 @@
                 "spy",
                 "stub"
             ],
-            "time": "2019-06-13T12:50:23+00:00"
+            "time": "2019-10-03T11:07:50+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

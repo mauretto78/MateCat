@@ -2012,7 +2012,6 @@ class ProjectManager {
         //update the last id, if there is another cycle update this value
         $this->min_max_segments_id[ 'job_last_segment' ] = end( $sequenceIds );
 
-
         $segments_metadata = [];
         foreach ( $sequenceIds as $position => $id_segment ) {
 
@@ -2044,7 +2043,6 @@ class ProjectManager {
             $_metadata = $this->features->filter( 'appendFieldToAnalysisObject', $_metadata, $this->projectStructure );
 
             $segments_metadata[] = $_metadata;
-
         }
 
         $segmentsDao = new Segments_SegmentDao();

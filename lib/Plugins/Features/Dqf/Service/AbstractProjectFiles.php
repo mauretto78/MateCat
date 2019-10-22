@@ -31,22 +31,22 @@ abstract class AbstractProjectFiles {
     /**
      * @var ISession
      */
-    protected $session ;
+    protected $session;
 
     /**
      * @var CreateProjectResponseStruct
      */
-    protected $remoteProject ;
+    protected $remoteProject;
 
     /**
      * @var MaserFileCreationResponseStruct[]
      */
-    protected $remoteFiles ;
+    protected $remoteFiles;
 
     /**
      * @var array
      */
-    protected $_targetLanguages ;
+    protected $_targetLanguages;
 
     abstract protected function getFilesPath();
 
@@ -57,17 +57,17 @@ abstract class AbstractProjectFiles {
      * @param CreateProjectResponseStruct $remoteProject
      */
     public function __construct( ISession $session, CreateProjectResponseStruct $remoteProject ) {
-        $this->session = $session ;
-        $this->remoteProject = $remoteProject ;
+        $this->session       = $session;
+        $this->remoteProject = $remoteProject;
     }
 
     public function getFiles() {
         $requestStruct             = new ProjectRequestStruct();
-        $requestStruct->projectId  = $this->remoteProject->dqfId ;
-        $requestStruct->projectKey = $this->remoteProject->dqfUUID ;
+        $requestStruct->projectId  = $this->remoteProject->dqfId;
+        $requestStruct->projectKey = $this->remoteProject->dqfUUID;
 
-        $requestStruct->sessionId = $this->session->getSessionId() ;
-        $requestStruct->apiKey    = INIT::$DQF_API_KEY ;
+        $requestStruct->sessionId = $this->session->getSessionId();
+        $requestStruct->apiKey    = INIT::$DQF_API_KEY;
 
         $client = new Client();
         $client->setSession( $this->session );
@@ -82,40 +82,40 @@ abstract class AbstractProjectFiles {
         $content = json_decode( $client->curl()->getSingleContent( $request ), true );
 
         if ( $client->curl()->hasError( $request ) ) {
-            throw new Exception('Error while fetching files: ' . json_encode( $client->curl()->getAllContents() ) ) ;
+            throw new Exception( 'Error while fetching files: ' . json_encode( $client->curl()->getAllContents() ) );
         }
 
         $outputArray = [];
-        foreach( $content['modelList'] as $item ) {
-            $id = $item['integratorFileMap']['clientValue'];
-            $outputArray[ $id ] = new FileResponseStruct( $item ) ;
+        foreach ( $content[ 'modelList' ] as $item ) {
+            $id                 = $item[ 'integratorFileMap' ][ 'clientValue' ];
+            $outputArray[ $id ] = new FileResponseStruct( $item );
         }
 
-        return $outputArray ;
+        return $outputArray;
     }
 
     /**
      * @return MaserFileCreationResponseStruct[]
      */
     public function getFilesResponseStructs() {
-        return array_map( function( $element ) {
-            return new MaserFileCreationResponseStruct([
+        return array_map( function ( $element ) {
+            return new MaserFileCreationResponseStruct( [
                     'dqfId' => $element->id
-            ]);
-        }, $this->getFiles() ) ;
+            ] );
+        }, $this->getFiles() );
     }
 
     public function setFile( Files_FileStruct $file, $numberOfSegments ) {
         $fileRequestStruct = new MasterFileRequestStruct();
 
-        $fileRequestStruct->sessionId   = $this->session->getSessionId();
-        $fileRequestStruct->projectKey  = $this->remoteProject->dqfUUID ;
+        $fileRequestStruct->sessionId  = $this->session->getSessionId();
+        $fileRequestStruct->projectKey = $this->remoteProject->dqfUUID;
 
-        $fileRequestStruct->name             = $file->filename ;
+        $fileRequestStruct->name             = $file->filename;
         $fileRequestStruct->clientId         = Functions::scopeId( $file->id );
-        $fileRequestStruct->numberOfSegments = $numberOfSegments ;
+        $fileRequestStruct->numberOfSegments = $numberOfSegments;
 
-        $this->files[] = $fileRequestStruct ;
+        $this->files[] = $fileRequestStruct;
     }
 
     /**
@@ -125,50 +125,59 @@ abstract class AbstractProjectFiles {
         $this->_submitFiles();
         $this->_submitTargetLanguages();
 
-        return $this->remoteFiles ;
+        return $this->remoteFiles;
     }
 
     public function setTargetLanguages( $languages ) {
-        $this->_targetLanguages = $languages ;
+        $this->_targetLanguages = $languages;
     }
 
     protected function _submitTargetLanguages() {
         $client = new Client();
         $client->setSession( $this->session );
 
-        foreach( $this->remoteFiles as $file ) {
-            foreach( $this->_targetLanguages as $language ) {
-                $requestStruct                     = new FileTargetLanguageRequestStruct() ;
-                $requestStruct->targetLanguageCode = $language ;
-                $requestStruct->sessionId          = $this->session->getSessionId() ;
-                $requestStruct->projectKey         = $this->remoteProject->dqfUUID ;
-                $requestStruct->projectId          = $this->remoteProject->dqfId ;
-                $requestStruct->fileId             = $file->dqfId ;
+        foreach ( $this->remoteFiles as $file ) {
 
-                $client->createResource('/project/master/%s/file/%s/targetLang', 'post', [
-                        'formData' => $requestStruct->getParams(),
-                        'pathParams' => $requestStruct->getPathParams(),
-                        'headers' => $this->session->filterHeaders( $requestStruct ),
-                ] );
+            $i = 0;
+
+            foreach ( $this->_targetLanguages as $language ) {
+
+                // Submit only the first time
+                if ( $i === 0 ) {
+                    $requestStruct                     = new FileTargetLanguageRequestStruct();
+                    $requestStruct->targetLanguageCode = $language;
+                    $requestStruct->sessionId          = $this->session->getSessionId();
+                    $requestStruct->projectKey         = $this->remoteProject->dqfUUID;
+                    $requestStruct->projectId          = $this->remoteProject->dqfId;
+                    $requestStruct->fileId             = $file->dqfId;
+
+                    $client->createResource( '/project/master/%s/file/%s/targetLang', 'post', [
+                            'formData'   => $requestStruct->getParams(),
+                            'pathParams' => $requestStruct->getPathParams(),
+                            'headers'    => $this->session->filterHeaders( $requestStruct ),
+                    ] );
+                }
+
+                $i++;
             }
         }
 
         $client->curl()->multiExec();
 
         if ( count( $client->curl()->getErrors() ) > 0 ) {
-            throw new \Exception('Errors setting files target languages: ' .
-            implode(', ', $client->curl()->getAllContents() )) ;
+            throw new \Exception( 'Errors setting files target languages: ' .
+                    implode( ', ', $client->curl()->getAllContents() ) );
         }
 
-        return true ;
+        return true;
     }
 
     protected function _submitFiles() {
         $client = new Client();
         $client->setSession( $this->session );
-        $url = sprintf( '/project/master/%s/file', $this->remoteProject->dqfId ) ;
+        $url = sprintf( '/project/master/%s/file', $this->remoteProject->dqfId );
 
-        foreach( $this->files as $file ) {
+        foreach ( $this->files as $file ) {
             $client->createResource( $url, 'post', [
                     'headers'  => $this->session->filterHeaders( $file ),
                     'formData' => $file->getParams()
@@ -179,10 +188,10 @@ abstract class AbstractProjectFiles {
 
 
         if ( count( $client->curl()->getErrors() ) > 0 ) {
-            throw new \Exception('Errors while creating files: ') ;
+            throw new \Exception( 'Errors while creating files: ' );
         }
 
-        foreach( $this->files as $file ) {
+        foreach ( $this->files as $file ) {
             $this->remoteFiles[ $file->clientId ] = new MaserFileCreationResponseStruct(
                     json_decode( $client->curl()->getSingleContent( $file->clientId ), true )
             );

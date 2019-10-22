@@ -69,7 +69,7 @@ class SegmentTranslationTransformer {
         $transformedArray[ 'translationId' ]     = $dqfSegment->dqf_translation_id;
         $transformedArray[ 'mtEngineId' ]        = 22; // MyMemory
         $transformedArray[ 'mtEngineOtherName' ] = '';
-        $transformedArray[ 'targetSegment' ]     = $extendedTranslation->translation_before;
+        $transformedArray[ 'targetSegment' ]     = ($extendedTranslation->translation_before) ? $extendedTranslation->translation_before : ''; // CANNOT BE NULL
         $transformedArray[ 'editedSegment' ]     = $extendedTranslation->translation_after;
         $transformedArray[ 'sourceSegment' ]     = $segment->segment;
         $transformedArray[ 'segmentOriginId' ]   = $segmentOriginId;

@@ -113,16 +113,16 @@ class INIT {
 
     /**
      * DQF configuration
-     *
      */
     public static $DQF_BASE_URL;
     public static $DQF_ID_PREFIX = '';
     public static $DQF_API_KEY;
     public static $DQF_ENCRYPTION_KEY;
     public static $DQF_ENCRYPTION_IV;
-
     public static $DQF_GENERIC_USERNAME;
     public static $DQF_GENERIC_PASSWORD;
+    public static $DQF_DEBUG;
+    public static $DQF_SESSION_PROVIDER_DRIVER;
 
     /**
      * We proose that lxq_server is in a configuration file
