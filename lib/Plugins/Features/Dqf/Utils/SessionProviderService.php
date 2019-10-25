@@ -1,7 +1,8 @@
 <?php
 
-namespace Dqf;
+namespace Features\Dqf\Utils;
 
+use Features\Dqf\Utils\Factory\SessionProviderFactory;
 use Matecat\Dqf\SessionProvider;
 
 class SessionProviderService {
@@ -18,7 +19,7 @@ class SessionProviderService {
      */
     private static function getSessionProviderInstance() {
 
-        if(false === isset(self::$sessionProvider)){
+        if ( false === isset( self::$sessionProvider ) ) {
             self::$sessionProvider = SessionProviderFactory::create();
         }
 
@@ -36,11 +37,11 @@ class SessionProviderService {
     public static function getAnonymous( $email ) {
         $sessionProvider = self::getSessionProviderInstance();
 
-        if(false === $sessionProvider->hasGenericEmail($email)){
+        if ( false === $sessionProvider->hasGenericEmail( $email ) ) {
             self::createAnonymous( $email );
         }
 
-        return $sessionProvider->getByGenericEmail($email);
+        return $sessionProvider->getByGenericEmail( $email );
     }
 
     /**
@@ -59,27 +60,27 @@ class SessionProviderService {
     }
 
     /**
-     * @param $externalReferenceId
-     * @param $username
-     * @param $password
+     * @param      $externalReferenceId
+     * @param null $username
+     * @param null $password
      *
      * @return mixed|void
      * @throws \Matecat\Dqf\Exceptions\SessionProviderException
      * @throws \Predis\Connection\ConnectionException
-     * @throws \ReflectionException
+     * @throws \Exception
      */
     public static function get( $externalReferenceId, $username = null, $password = null ) {
         $sessionProvider = self::getSessionProviderInstance();
 
-        if(false === $sessionProvider->hasId($externalReferenceId)){
-            if(null === $username and null === $password){
-                throw new \Exception('Session Provider cannot retrieve a DqfUser from the provided id. Username and password are needed to perform login.');
+        if ( false === $sessionProvider->hasId( $externalReferenceId ) ) {
+            if ( null === $username and null === $password ) {
+                throw new \Exception( 'SessionProvider cannot retrieve a DqfUser from the provided id. Username and password are needed to perform login.' );
             }
 
             self::create( $externalReferenceId, $username, $password );
         }
 
-        return self::getSessionProviderInstance()->getById($externalReferenceId);
+        return self::getSessionProviderInstance()->getById( $externalReferenceId );
     }
 
     /**
@@ -92,6 +93,6 @@ class SessionProviderService {
      * @throws \ReflectionException
      */
     private static function create( $externalReferenceId, $username, $password ) {
-        self::getSessionProviderInstance()->createByCredentials($externalReferenceId, $username, $password);
+        self::getSessionProviderInstance()->createByCredentials( $externalReferenceId, $username, $password );
     }
 }

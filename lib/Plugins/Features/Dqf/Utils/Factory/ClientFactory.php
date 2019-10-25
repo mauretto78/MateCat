@@ -1,10 +1,10 @@
 <?php
 
-namespace Dqf;
+namespace Features\Dqf\Utils\Factory;
 
 use Matecat\Dqf\Client;
 
-class ClientFactory
+class ClientFactory implements FactoryInterface
 {
     /**
      * @return Client
@@ -21,3 +21,5 @@ class ClientFactory
         ]);
     }
 }
+
+

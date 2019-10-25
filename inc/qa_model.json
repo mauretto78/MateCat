@@ -33,17 +33,22 @@
     "severities": [
       {
         "label": "Neutral",
-        "dqf_id" : 0,
-        "penalty": 0
+        "dqf_id" : 1,
+        "penalty": 1
       },{
         "label": "Minor",
         "dqf_id" : 2,
-        "penalty": 0.5
+        "penalty": 2
       },
       {
         "label": "Major",
-        "dqf_id" : 2,
-        "penalty": 2
+        "dqf_id" : 3,
+        "penalty": 3
+      },
+      {
+        "label": "Critical",
+        "dqf_id" : 4,
+        "penalty": 4
       }
     ],
 

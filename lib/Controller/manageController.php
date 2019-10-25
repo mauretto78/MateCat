@@ -24,11 +24,26 @@ class manageController extends viewController {
 
     public function doAction() {
 
-        $sessionId = \Dqf\SessionProviderService::getAnonymous('mauro@translated.net');
-        //$sessionId = \Dqf\SessionProviderService::get(23, 'luca.defranceschi@translated.net', 'lucFran@Tran!1');
-        $client = \Dqf\ClientFactory::create();
-        $repo = new \Matecat\Dqf\Repository\Api\MasterProjectRepository($client, $sessionId, 'mauro@translated.net');
+        $command = new \Features\Dqf\Command\CreateMasterProjectCommand();
+        $command->id_project = 1;
+        $command->source_language = 'it-IT';
+        $command->file_segments_count[1] = 4;
 
+        (new \Features\Dqf\CommandHandler\CreateMasterProjectCommandHandler())->handle($command);
+
+        echo 'dsadsa'; die();
+
+        // login
+        $sessionId = \Features\Dqf\Utils\SessionProviderService::getAnonymous('mauro@translated.net');
+        //$sessionId = \Dqf\SessionProviderService::get(23, 'luca.defranceschi@translated.net', 'lucFran@Tran!1');
+
+        // save user in session
+
+
+
+        // repo
+        $client = \Features\Dqf\Utils\Factory\ClientFactory::create();
+        $repo = new \Matecat\Dqf\Repository\Api\MasterProjectRepository($client, $sessionId, 'mauro@translated.net');
 
         $masterProject = new \Matecat\Dqf\Model\Entity\MasterProject(
                 'eeeeee',
