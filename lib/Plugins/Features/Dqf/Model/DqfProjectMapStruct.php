@@ -22,8 +22,10 @@ class DqfProjectMapStruct extends DataAccess_AbstractDaoSilentStruct implements 
     public $last_segment ;
     public $password ;
 
+    public $dqf_client_id;
     public $dqf_project_id ;
     public $dqf_project_uuid ;
+    public $dqf_parent_id ;
     public $dqf_parent_uuid ;
 
     public $project_type ;

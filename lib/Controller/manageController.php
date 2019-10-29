@@ -33,48 +33,6 @@ class manageController extends viewController {
 
         echo 'dsadsa'; die();
 
-        // login
-        $sessionId = \Features\Dqf\Utils\SessionProviderService::getAnonymous('mauro@translated.net');
-        //$sessionId = \Dqf\SessionProviderService::get(23, 'luca.defranceschi@translated.net', 'lucFran@Tran!1');
-
-        // save user in session
-
-
-
-        // repo
-        $client = \Features\Dqf\Utils\Factory\ClientFactory::create();
-        $repo = new \Matecat\Dqf\Repository\Api\MasterProjectRepository($client, $sessionId, 'mauro@translated.net');
-
-        $masterProject = new \Matecat\Dqf\Model\Entity\MasterProject(
-                'eeeeee',
-                'it-IT',
-                1,2,1,1
-        );
-
-        // file(s)
-        $file = new \Matecat\Dqf\Model\Entity\File('test-file', 3);
-        $file->setClientId('rewrewrew');
-        $masterProject->addFile($file);
-
-        // assoc targetLang to file(s)
-        $masterProject->assocTargetLanguageToFile('en-US', $file);
-        $masterProject->assocTargetLanguageToFile('fr-FR', $file);
-
-        // review settings
-        $reviewSettings = new \Matecat\Dqf\Model\Entity\ReviewSettings(\Matecat\Dqf\Constants::REVIEW_TYPE_COMBINED);
-        $reviewSettings->setErrorCategoryIds0(1);
-        $reviewSettings->setErrorCategoryIds1(2);
-        $reviewSettings->setErrorCategoryIds2(3);
-        $reviewSettings->setSeverityWeights('[{"severityId":"1","weight":1}, {"severityId":"2","weight":2}, {"severityId":"3","weight":3}, {"severityId":"4","weight":4}]');
-        $reviewSettings->setPassFailThreshold(0.00);
-        $masterProject->setReviewSettings($reviewSettings);
-
-        $project = $repo->save($masterProject);
-
-        var_dump($project->getTargetLanguageAssoc() );
-        $repo->delete($project);
-
-        die();
 
 
 

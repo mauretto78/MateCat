@@ -7,6 +7,8 @@ use ReflectionProperty;
 
 abstract class AbstractCommand {
 
+    protected $sessionId;
+
     public function __construct( $array_params = [] ) {
         if ( $array_params != null ) {
             foreach ( $array_params as $property => $value ) {

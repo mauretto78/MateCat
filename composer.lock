@@ -437,16 +437,16 @@
         },
         {
             "name": "matecat/dqf-integrator",
-            "version": "v1.0.18",
+            "version": "v1.0.19",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/dqf-integrator.git",
-                "reference": "c005705945aa65da7db8980f4d66bca66351eea2"
+                "reference": "3b0ce316f9a2f756013483a1ecaa9e769756b4ad"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/c005705945aa65da7db8980f4d66bca66351eea2",
-                "reference": "c005705945aa65da7db8980f4d66bca66351eea2",
+                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/3b0ce316f9a2f756013483a1ecaa9e769756b4ad",
+                "reference": "3b0ce316f9a2f756013483a1ecaa9e769756b4ad",
                 "shasum": ""
             },
             "require": {
@@ -491,7 +491,7 @@
                 "dqf",
                 "php"
             ],
-            "time": "2019-10-25T08:15:04+00:00"
+            "time": "2019-10-28T15:20:53+00:00"
         },
         {
             "name": "matecat/simple-s3",
