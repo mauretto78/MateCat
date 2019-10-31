@@ -10,7 +10,8 @@ namespace Features\Dqf\Controller\API;
 
 
 use API\V2\KleinController;
-use Features\Dqf\Service\SessionProvider;
+use Features\Dqf\Utils\Factory\SessionProviderFactory;
+use Features\Dqf\Utils\Factory\UserRepositoryFactory;
 
 class LoginController extends KleinController {
 
@@ -19,16 +20,29 @@ class LoginController extends KleinController {
      * @throws \Exception
      */
     public function login() {
-        // TODO: these should be passed as params
+
+        $id       = 1;
         $username = 'fabrizio@translated.net';
-        $password = 'fabrizio@translated.net';
+        $password = 'password';
 
-        $session = SessionProvider::getByCredentials($username, $password);
+        $sessionProvider = SessionProviderFactory::create();
+        $sessionId       = $sessionProvider->create( [
+                'externalReferenceId' => $id,
+                'username'            => $username,
+                'password'            => $password,
+        ] );
 
-        $this->response->code(200);
-        $this->response->json(['session' => [
-                'sessionId' => $session->getSessionId(),
-                'expires' => $session->getExpires()
-        ]]) ;
+        $userRepository = UserRepositoryFactory::create();
+
+        $dqfUser = $userRepository->getByExternalId( $id );
+
+        $this->response->code( 200 );
+        $this->response->json( [
+                'session' => [
+                        'sessionId'      => $sessionId,
+                        'expires'        => $dqfUser->getSessionExpiresAt(),
+                        'is_still_valid' => $dqfUser->isSessionStillValid()
+                ]
+        ] );
     }
 }

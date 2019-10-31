@@ -8,11 +8,9 @@
 
 namespace API\App;
 
-
-use API\V2\Exceptions\AuthenticationError;
 use Bootstrap;
 use Exceptions\NotFoundException;
-use Features\Dqf\Service\SessionProvider;
+use Features\Dqf\Utils\Factory\SessionProviderFactory;
 use Features\Dqf\Utils\UserMetadata;
 
 class UserMetadataController extends AbstractStatefulKleinController {
@@ -23,15 +21,15 @@ class UserMetadataController extends AbstractStatefulKleinController {
             throw new NotFoundException( 'User not found' );
         }
 
-        $dqfUsername = $this->request->param( 'metadata' )[ 'dqf_username' ];
-        $dqfPassword = $this->request->param( 'metadata' )[ 'dqf_password' ];
+        $loginParams = $this->getLoginParams($this->user->getUid(), $this->request->param( 'metadata' ));
+        $sessionProvider = SessionProviderFactory::create();
 
         try {
-            // Authenticate
-            $session = SessionProvider::getByCredentials( $dqfUsername, $dqfPassword );
+            // Authenticate and get the sessionId
+            $sessionId = $sessionProvider->create( $loginParams );
 
             // persist data on db
-            UserMetadata::setCredentials( $this->user->getUid(), $session );
+            UserMetadata::setCredentials( $this->user->getUid(), $loginParams['username'], $loginParams['password'], $sessionId, $loginParams['isGeneric'] );
 
             // update response
             $data = $this->user->getMetadataAsKeyValue();
@@ -41,8 +39,38 @@ class UserMetadataController extends AbstractStatefulKleinController {
             }
 
             $this->response->json( $data );
-        } catch ( AuthenticationError $e ) {
+        } catch ( \Exception $e ) {
             $this->response->json( null );
+        }
+    }
+
+    /**
+     * @param $userId
+     * @param $metadata
+     *
+     * @return array
+     */
+    private function getLoginParams($userId, $metadata) {
+
+        // do anonymous login
+        if ( isset( $metadata[ 'dqf_generic_email' ] ) ) {
+            return [
+                    'externalReferenceId' => $userId,
+                    'username'            => \INIT::$DQF_GENERIC_USERNAME,
+                    'password'            => \INIT::$DQF_GENERIC_PASSWORD,
+                    'isGeneric'           => true,
+                    'genericEmail'        => $metadata[ 'dqf_generic_email' ],
+            ];
+        }
+
+        // do regular login
+        if ( isset( $metadata[ 'dqf_username' ] ) and isset( $metadata[ 'dqf_password' ] ) ) {
+            return [
+                    'externalReferenceId' => $userId,
+                    'username'            => $metadata[ 'dqf_username' ],
+                    'password'            => $metadata[ 'dqf_password' ],
+                    'isGeneric'           => false,
+            ];
         }
     }
 

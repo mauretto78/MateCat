@@ -17,7 +17,6 @@
         "psr/log": "~1.0",
         "symfony/console": "^2.8",
         "symfony/filesystem": "^2.8.9",
-        "defuse/php-encryption": "2.0.*",
-        "ramsey/uuid": "^3.8"
+        "defuse/php-encryption": "2.0.*"
     }
 }

@@ -2,7 +2,6 @@
 
 use ActivityLog\Activity;
 use ActivityLog\ActivityLogStruct;
-use Dqf\SessionProviderFactory;
 
 class manageController extends viewController {
 
@@ -23,19 +22,6 @@ class manageController extends viewController {
     }
 
     public function doAction() {
-
-        $command = new \Features\Dqf\Command\CreateMasterProjectCommand();
-        $command->id_project = 1;
-        $command->source_language = 'it-IT';
-        $command->file_segments_count[1] = 4;
-
-        (new \Features\Dqf\CommandHandler\CreateMasterProjectCommandHandler())->handle($command);
-
-        echo 'dsadsa'; die();
-
-
-
-
         $this->featureSet->filter( 'beginDoAction', $this );
 
         $this->checkLoginRequiredAndRedirect();
@@ -46,7 +32,6 @@ class manageController extends viewController {
         $activity->uid        = $this->user->uid;
         $activity->event_date = date( 'Y-m-d H:i:s' );
         Activity::save( $activity );
-
     }
 
     public function setTemplateVars() {

@@ -4,7 +4,7 @@ namespace Features\Dqf\CommandHandler;
 
 use Features\Dqf\Command\CommandInterface;
 
-interface DqfCommandHandlerInterface  {
+interface CommandHandlerInterface  {
 
     /**
      * @param CommandInterface $command

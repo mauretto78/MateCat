@@ -3,6 +3,7 @@
 namespace Features\Dqf\Utils;
 
 use Features\Dqf\Service\ISession;
+use Features\Dqf\Utils\Factory\DataEncryptorFactory;
 use Users\MetadataDao;
 
 class UserMetadata {
@@ -10,14 +11,19 @@ class UserMetadata {
     const DQF_USERNAME_KEY    = 'dqf_username';
     const DQF_PASSWORD_KEY    = 'dqf_password';
     const DQF_SESSION_ID      = 'dqf_session_id';
-    const DQF_SESSION_EXPIRES = 'dqf_session_expires';
+    const DQF_IS_GENERIC      = 'dqf_is_generic';
+    const DQF_GENERIC_EMAIL   = 'dqf_generic_email';
 
     public static function extractCredentials( $user_metadata ) {
+
+        $dataEncryptor = DataEncryptorFactory::create();
+
         return [
-                $user_metadata[ self::DQF_USERNAME_KEY ],
-                $user_metadata[ self::DQF_PASSWORD_KEY ],
+                $dataEncryptor->decrypt($user_metadata[ self::DQF_USERNAME_KEY ]),
+                $dataEncryptor->decrypt($user_metadata[ self::DQF_PASSWORD_KEY ]),
                 $user_metadata[ self::DQF_SESSION_ID ],
-                $user_metadata[ self::DQF_SESSION_EXPIRES ],
+                $user_metadata[ self::DQF_IS_GENERIC ],
+                $dataEncryptor->decrypt($user_metadata[ self::DQF_GENERIC_EMAIL ]),
         ];
     }
 
@@ -31,7 +37,8 @@ class UserMetadata {
         $dao->delete( $uid, self::DQF_USERNAME_KEY );
         $dao->delete( $uid, self::DQF_PASSWORD_KEY );
         $dao->delete( $uid, self::DQF_SESSION_ID );
-        $dao->delete( $uid, self::DQF_SESSION_EXPIRES );
+        $dao->delete( $uid, self::DQF_IS_GENERIC );
+        $dao->delete( $uid, self::DQF_GENERIC_EMAIL );
     }
 
     /**
@@ -40,11 +47,17 @@ class UserMetadata {
      * @param          $uid
      * @param ISession $session
      */
-    public static function setCredentials( $uid, ISession $session ) {
+    public static function setCredentials( $uid, $username, $password, $sessionId, $isGeneric, $genericEmail = null ) {
+
+        $dataEncryptor = DataEncryptorFactory::create();
         $dao = new MetadataDao();
-        $dao->set( $uid, self::DQF_USERNAME_KEY, $session->getEmail() );
-        $dao->set( $uid, self::DQF_PASSWORD_KEY, $session->getPassword() );
-        $dao->set( $uid, self::DQF_SESSION_ID, $session->getSessionId() );
-        $dao->set( $uid, self::DQF_SESSION_EXPIRES, $session->getExpires() );
+        $dao->set( $uid, self::DQF_USERNAME_KEY, $dataEncryptor->encrypt($username) );
+        $dao->set( $uid, self::DQF_PASSWORD_KEY, $dataEncryptor->encrypt($password) );
+        $dao->set( $uid, self::DQF_SESSION_ID, $sessionId );
+        $dao->set( $uid, self::DQF_IS_GENERIC, $isGeneric );
+
+        if(false === empty($genericEmail)) {
+            $dao->set( $uid, self::DQF_GENERIC_EMAIL, $dataEncryptor->encrypt($genericEmail) );
+        }
     }
 }

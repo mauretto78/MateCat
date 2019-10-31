@@ -41,6 +41,13 @@ class SessionProviderService {
             self::createAnonymous( $email );
         }
 
+        try {
+            $sessionProvider->getByGenericEmail( $email );
+        } catch (\Exception $e){
+            echo $e->getMessage();
+            die();
+        }
+
         return $sessionProvider->getByGenericEmail( $email );
     }
 
@@ -52,11 +59,12 @@ class SessionProviderService {
      * @throws \ReflectionException
      */
     private static function createAnonymous( $email ) {
-        self::getSessionProviderInstance()->createAnonymous(
-                $email,
-                \INIT::$DQF_GENERIC_USERNAME,
-                \INIT::$DQF_GENERIC_PASSWORD
-        );
+        self::getSessionProviderInstance()->create([
+                'genericEmail' => $email,
+                'username' => \INIT::$DQF_GENERIC_USERNAME,
+                'password' => \INIT::$DQF_GENERIC_PASSWORD,
+                'isGeneric' => true,
+        ]);
     }
 
     /**
@@ -93,6 +101,10 @@ class SessionProviderService {
      * @throws \ReflectionException
      */
     private static function create( $externalReferenceId, $username, $password ) {
-        self::getSessionProviderInstance()->createByCredentials( $externalReferenceId, $username, $password );
+        self::getSessionProviderInstance()->create([
+                'externalReferenceId' => $externalReferenceId,
+                'username' => \INIT::$DQF_GENERIC_USERNAME,
+                'password' => \INIT::$DQF_GENERIC_PASSWORD,
+        ]);
     }
 }

@@ -1,44 +1,53 @@
 <?php
 
 
-namespace Features\Dqf\Worker ;
+namespace Features\Dqf\Worker;
 
 use API\V2\Exceptions\AuthenticationError;
-use Features\Dqf\Model\ProjectCreation;
-use Features\Dqf\Service\Struct\ProjectCreationStruct;
+use Features\Dqf\Command\CreateMasterProjectCommand;
+use Features\Dqf\CommandHandler\CreateMasterProjectCommandHandler;
 use TaskRunner\Commons\AbstractElement;
 use TaskRunner\Commons\AbstractWorker;
 use TaskRunner\Commons\QueueElement;
 use TaskRunner\Exceptions\EndQueueException;
 
-class CreateProjectWorker extends AbstractWorker  {
+class CreateProjectWorker extends AbstractWorker {
 
-    protected $sourceLanguageCode ;
+    /**
+     * @var string
+     */
+    protected $sourceLanguageCode;
 
-
-    protected $reQueueNum = 0 ; // stop at first error
+    /**
+     * @var int
+     */
+    protected $reQueueNum = 0; // stop at first error
 
     /**
      * @var QueueElement
      */
-    protected $queueElement ;
+    protected $queueElement;
 
+    /**
+     * @param AbstractElement $queueElement
+     *
+     * @return mixed|void
+     * @throws \Exception
+     */
     public function process( AbstractElement $queueElement ) {
-        $this->queueElement = $queueElement ;
+
+        $this->queueElement = $queueElement;
         $this->_checkForReQueueEnd( $this->queueElement );
-        $this->_checkDatabaseConnection() ;
+        $this->_checkDatabaseConnection();
 
         /** Wait to ensure slave databases are up to date. */
-        sleep( 4 ) ;
+        sleep( 4 );
 
         try {
-            $struct = new ProjectCreationStruct( json_decode( $queueElement->params, true ) );
-            (new ProjectCreation( $struct ))->process();
+            $command = new CreateMasterProjectCommand( json_decode( $queueElement->params, true ) );
+            ( new CreateMasterProjectCommandHandler() )->handle( $command );
+        } catch ( \Exception $e ) {
+            throw new EndQueueException( $e->getMessage() );
         }
-        catch (AuthenticationError $e ) {
-            throw new EndQueueException( $e->getMessage() ) ;
-        }
-
     }
-
 }

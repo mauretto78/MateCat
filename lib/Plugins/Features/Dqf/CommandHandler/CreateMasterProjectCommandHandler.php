@@ -3,8 +3,8 @@
 namespace Features\Dqf\CommandHandler;
 
 use Features\Dqf\Command\CreateMasterProjectCommand;
-use Features\Dqf\Model\DqfFileMapStruct;
 use Features\Dqf\Model\DqfFileMapDao;
+use Features\Dqf\Model\DqfFileMapStruct;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapDao;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
@@ -12,7 +12,6 @@ use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfQualityModel;
 use Features\Dqf\Utils\Factory\ClientFactory;
 use Features\Dqf\Utils\ProjectMetadata;
-use Features\Dqf\Utils\SessionProviderService;
 use Matecat\Dqf\Model\Entity\File;
 use Matecat\Dqf\Model\Entity\FileTargetLang;
 use Matecat\Dqf\Model\Entity\MasterProject;
@@ -20,9 +19,8 @@ use Matecat\Dqf\Model\Entity\ReviewSettings;
 use Matecat\Dqf\Model\Entity\SourceSegment;
 use Matecat\Dqf\Model\ValueObject\Severity;
 use Matecat\Dqf\Repository\Api\MasterProjectRepository;
-use Ramsey\Uuid\Uuid;
 
-class CreateMasterProjectCommandHandler implements DqfCommandHandlerInterface {
+class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
 
     /**
      * @var \Projects_ProjectStruct
@@ -52,7 +50,6 @@ class CreateMasterProjectCommandHandler implements DqfCommandHandlerInterface {
         }
 
         $this->setUp( $command );
-
         $masterProject = $this->createProject();
         $this->submitProjectFiles( $masterProject );
         $this->submitReviewSettings( $masterProject );
@@ -66,20 +63,18 @@ class CreateMasterProjectCommandHandler implements DqfCommandHandlerInterface {
      * @throws \Exception
      */
     private function setUp( CreateMasterProjectCommand $command ) {
+
         $this->command = $command;
         $this->project = \Projects_ProjectDao::findById( $command->id_project );
-        $this->repo    = new MasterProjectRepository( ClientFactory::create(), $this->getSessionId(), 'mauro@translated.net' );
-    }
 
-    /**
-     * @return mixed
-     * @throws \Exception
-     */
-    private function getSessionId() {
+        if ( empty($this->project->getOriginalOwner()->getUid()) ){
+            throw new \Exception( 'The project has not an owner' );
+        }
 
-        return SessionProviderService::getAnonymous( 'mauro@translated.net' );
+        $sessionId = $this->getSessionId($this->project->getOriginalOwner()->getUid());
+        $genericEmail = $this->getGenericEmail($this->project->getOriginalOwner()->getUid());
 
-        //return SessionProviderService::get( $this->project->getOriginalOwner()->getUid() );
+        $this->repo    = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
 
     /**
@@ -89,21 +84,17 @@ class CreateMasterProjectCommandHandler implements DqfCommandHandlerInterface {
     private function createProject() {
         $projectInputParams = ProjectMetadata::extractProjectParameters( $this->project->getMetadataAsKeyValue() );
         $id_project         = \Database::obtain()->nextSequence( 'id_dqf_project' )[ 0 ];
-        $clientId           = Uuid::uuid4()->toString();
+        $clientId           = \Utils::createToken();
 
-//        $masterProject = new MasterProject(
-//                $this->project->name,
-//                $this->command->source_language,
-//                $projectInputParams['contentTypeId'],
-//                $projectInputParams['industryId'],
-//                $projectInputParams['processId'],
-//                $projectInputParams['qualityLevelId']
-//        );
         $masterProject = new MasterProject(
-                $this->project->name,
-                $this->command->source_language,
-                1, 1, 1, 1
+            $this->project->name,
+            $this->command->source_language,
+            (int)$projectInputParams['contentTypeId'],
+            (int)$projectInputParams['industryId'],
+            (int)$projectInputParams['processId'],
+            (int)$projectInputParams['qualityLevelId']
         );
+
         $masterProject->setClientId( $clientId );
 
         $dqfMasterProject = $this->repo->save( $masterProject );
@@ -139,7 +130,7 @@ class CreateMasterProjectCommandHandler implements DqfCommandHandlerInterface {
 
         foreach ( $files as $file ) {
             $segmentsCount = $this->command->file_segments_count[ $file->id ];
-            $clientId      = Uuid::uuid4()->toString();
+            $clientId      = \Utils::createToken();
 
             $dqfFile = new File( $file->filename, $segmentsCount );
             $dqfFile->setClientId( $clientId );
@@ -148,13 +139,16 @@ class CreateMasterProjectCommandHandler implements DqfCommandHandlerInterface {
             $this->repo->update( $masterProject );
 
             $struct = new DqfFileMapStruct( [
-                    'file_id'            => $file->id,
-                    'file_name'          => $file->filename,
-                    'dqf_id'             => $dqfFile->getDqfId(),
-                    'dqf_client_id'      => $clientId,
+                    'file_id'                 => $file->id,
+                    'file_name'               => $file->filename,
+                    'dqf_id'                  => $dqfFile->getDqfId(),
+                    'dqf_client_id'           => $clientId,
+                    'dqf_number_of_segments'  => $segmentsCount,
+                    'dqf_parent_project_id'   => $masterProject->getDqfId(),
+                    'dqf_parent_project_uuid' => $masterProject->getDqfUuid(),
             ] );
 
-            DqfFileMapDao::insertStructWithAutoIncrements($struct);
+            DqfFileMapDao::insertStructWithAutoIncrements( $struct );
 
             foreach ( $this->project->getTargetLanguages() as $index => $targetLanguage ) {
                 $masterProject->assocTargetLanguageToFile( $targetLanguage, $dqfFile );
@@ -171,7 +165,7 @@ class CreateMasterProjectCommandHandler implements DqfCommandHandlerInterface {
                         'target_lang'        => $targetLanguage,
                 ] );
 
-                DqfFileTargetLangAssocMapDao::insertStruct($struct);
+                DqfFileTargetLangAssocMapDao::insertStruct( $struct );
             }
         }
     }

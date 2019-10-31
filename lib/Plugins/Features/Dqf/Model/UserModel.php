@@ -8,12 +8,11 @@
 
 namespace Features\Dqf\Model;
 
-use API\V2\Exceptions\AuthenticationError;
 use Exception;
 use Features\Dqf\Service\GenericSession;
 use Features\Dqf\Service\ISession;
 use Features\Dqf\Service\Session;
-use Features\Dqf\Service\SessionProvider;
+use Features\Dqf\Utils\Factory\SessionProviderFactory;
 use Users_UserStruct;
 
 class UserModel {
@@ -66,11 +65,13 @@ class UserModel {
 
     /**
      * @return bool
+     * @throws \Exception
      */
     public function validCredentials() {
         try {
-            SessionProvider::getByUserId($this->user->getUid());
-        } catch ( AuthenticationError $e ) {
+            $sessionProvider = SessionProviderFactory::create();
+            $sessionProvider->getById( $this->user->getUid() );
+        } catch ( \Exception $e ) {
             return false;
         }
 
@@ -91,7 +92,7 @@ class UserModel {
         return $this->metadata;
     }
 
-    public function getUid(){
+    public function getUid() {
         return $this->user->getUid();
     }
 }
