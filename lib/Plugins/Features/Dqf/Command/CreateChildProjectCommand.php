@@ -1,10 +1,8 @@
 <?php
 
-namespace Features\Dqf\CommandHandler;
-
-use Features\Dqf\Command\AbstractCommand;
-use Features\Dqf\Command\CommandInterface;
+namespace Features\Dqf\Command;
 
 class CreateChildProjectCommand extends AbstractCommand implements CommandInterface {
-
+    public $id_job ;
+    public $type;
 }

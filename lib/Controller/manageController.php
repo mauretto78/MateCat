@@ -2,6 +2,7 @@
 
 use ActivityLog\Activity;
 use ActivityLog\ActivityLogStruct;
+use Features\Dqf\Command\CreateChildProjectCommand;
 
 class manageController extends viewController {
 
@@ -22,6 +23,17 @@ class manageController extends viewController {
     }
 
     public function doAction() {
+
+        $command = new CreateChildProjectCommand([
+                'id_job' => 6,
+                'type' => 'translation'
+        ]);
+
+        (new \Features\Dqf\CommandHandler\CreateChildProjectCommandHandler())->handle($command);
+
+        die();
+
+
         $this->featureSet->filter( 'beginDoAction', $this );
 
         $this->checkLoginRequiredAndRedirect();

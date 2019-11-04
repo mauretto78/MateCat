@@ -3,7 +3,6 @@
 
 namespace Features\Dqf\Worker;
 
-use API\V2\Exceptions\AuthenticationError;
 use Features\Dqf\Command\CreateMasterProjectCommand;
 use Features\Dqf\CommandHandler\CreateMasterProjectCommandHandler;
 use TaskRunner\Commons\AbstractElement;
