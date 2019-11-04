@@ -203,10 +203,10 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
 
         $files = \Files_FileDao::getByProjectId( $this->project->id );
 
-        $global_index = 1;
         foreach ( $files as $index => $file ) {
             $segments = ( new \Segments_SegmentDao() )->getByFileId( $file->id );
             $dqfFile  = $masterProject->getFiles()[ $index ];
+            $global_index = 1;
 
             foreach ( $segments as $segment ) {
                 $masterProject->addSourceSegment( new SourceSegment(

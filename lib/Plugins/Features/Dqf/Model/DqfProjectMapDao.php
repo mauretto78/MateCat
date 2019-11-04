@@ -46,7 +46,7 @@ class DqfProjectMapDao extends DataAccess_AbstractDao  {
      *
      * @return \Features\Dqf\Model\DqfProjectMapStruct|null
      */
-    public function findRootProject( Chunks_ChunkStruct $chunk) {
+    public function findRootProject(Chunks_ChunkStruct $chunk) {
         $sql = "SELECT * FROM dqf_projects_map
                 WHERE id_job = :id_job
                  AND archive_date IS NULL

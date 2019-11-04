@@ -2,7 +2,7 @@
 
 use ActivityLog\Activity;
 use ActivityLog\ActivityLogStruct;
-use Features\Dqf\Command\CreateChildProjectCommand;
+use Features\Dqf\Command\CreateTranslationBatchCommand;
 
 class manageController extends viewController {
 
@@ -24,13 +24,14 @@ class manageController extends viewController {
 
     public function doAction() {
 
-        $command = new CreateChildProjectCommand([
+        $command = new CreateTranslationBatchCommand([
                 'id_job' => 6,
-                'type' => 'translation'
+                'id_file' => 6,
         ]);
 
-        (new \Features\Dqf\CommandHandler\CreateChildProjectCommandHandler())->handle($command);
+        (new \Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler())->handle($command);
 
+        echo 'OK';
         die();
 
 
