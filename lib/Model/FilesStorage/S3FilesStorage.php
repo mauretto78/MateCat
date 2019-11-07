@@ -8,7 +8,6 @@ use INIT;
 use RedisHandler;
 use SimpleS3\Client;
 use SimpleS3\Components\Cache\RedisCache;
-use SimpleS3\Components\Encoders\UrlEncoder;
 
 /**
  * Class S3FilesStorage

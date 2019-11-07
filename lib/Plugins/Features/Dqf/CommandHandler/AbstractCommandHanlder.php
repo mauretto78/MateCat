@@ -2,8 +2,7 @@
 
 namespace Features\Dqf\CommandHandler;
 
-use Features\Dqf\Utils\Factory\ClientFactory;
-use Features\Dqf\Utils\Factory\UserRepositoryFactory;
+use Features\Dqf\Factory\UserRepositoryFactory;
 use Features\Dqf\Utils\SessionProviderService;
 use Matecat\Dqf\Utils\DataEncryptor;
 

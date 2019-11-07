@@ -3,15 +3,13 @@
 namespace Features\Dqf\CommandHandler;
 
 use Features\Dqf\Command\CreateChildProjectCommand;
-use Features\Dqf\Command\CreateMasterProjectCommand;
+use Features\Dqf\Factory\ClientFactory;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapDao;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
-use Features\Dqf\Utils\Factory\ClientFactory;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\FileTargetLang;
-use Matecat\Dqf\Model\Entity\MasterProject;
 use Matecat\Dqf\Repository\Api\ChildProjectRepository;
 use Matecat\Dqf\Repository\Api\MasterProjectRepository;
 
@@ -49,10 +47,10 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
             throw new \Exception( 'Provided command is not a valid instance of CreateChildProjectCommand class' );
         }
 
-        $this->setUp($command);
+        $this->setUp( $command );
 
         $childProject = $this->createProject();
-        $this->assocTargetLang($childProject);
+        $this->assocTargetLang( $childProject );
     }
 
     /**
@@ -62,35 +60,35 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
      */
     private function setUp( CreateChildProjectCommand $command ) {
         $this->command = $command;
-        $this->chunk   = \Chunks_ChunkDao::getByJobID($command->id_job)[0];
+        $this->chunk   = \Chunks_ChunkDao::getByJobID( $command->id_job )[ 0 ];
 
         // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
         // THIS MUST BE CHANGED
 
-        $sessionId = $this->getSessionId($uid);
-        $genericEmail = $this->getGenericEmail($uid);
+        $sessionId    = $this->getSessionId( $uid );
+        $genericEmail = $this->getGenericEmail( $uid );
 
         $this->masterProjectRepository = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
-        $this->childProjectRepository = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
+        $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
 
     /**
      * @return \Matecat\Dqf\Model\Entity\BaseApiEntity
      * @throws \Exception
      */
-    private function createProject(){
+    private function createProject() {
         $id_project          = \Database::obtain()->nextSequence( 'id_dqf_project' )[ 0 ];
         $clientId            = \Utils::createToken();
-        $parentMasterProject = (new DqfProjectMapDao())->findRootProject($this->chunk);
+        $parentMasterProject = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
 
-        $dqfMasterProject = $this->masterProjectRepository->get((int)$parentMasterProject->dqf_project_id, $parentMasterProject->dqf_project_uuid);
+        $dqfMasterProject = $this->masterProjectRepository->get( (int)$parentMasterProject->dqf_project_id, $parentMasterProject->dqf_project_uuid );
 
-        $childProject = new ChildProject($this->command->type);
-        $childProject->setParentProject($dqfMasterProject);
-        $childProject->setClientId($clientId);
+        $childProject = new ChildProject( $this->command->type );
+        $childProject->setParentProject( $dqfMasterProject );
+        $childProject->setClientId( $clientId );
 
-        $dqfChildProject = $this->childProjectRepository->save($childProject);
+        $dqfChildProject = $this->childProjectRepository->save( $childProject );
 
         $struct = new DqfProjectMapStruct( [
                 'id'               => $id_project,
@@ -122,10 +120,10 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
 
         $i = null;
 
-        foreach ($this->chunk->getFiles() as $file){
-            foreach ($childProject->getParentProject()->getFiles() as $index => $dqfFile){
-                if($dqfFile->getName() === $file->filename) {
-                    $childProject->assocTargetLanguageToFile($this->chunk->target, $dqfFile);
+        foreach ( $this->chunk->getFiles() as $file ) {
+            foreach ( $childProject->getParentProject()->getFiles() as $index => $dqfFile ) {
+                if ( $dqfFile->getName() === $file->filename ) {
+                    $childProject->assocTargetLanguageToFile( $this->chunk->target, $dqfFile );
                     $i = $index; // return the position in assocTargetLanguageToFile, it's needed later to be passed to getTargetLanguageAssoc method
                 }
             }
@@ -133,7 +131,7 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
 
         $this->childProjectRepository->update( $childProject );
 
-        if(null !== $i){
+        if ( null !== $i ) {
             /** @var FileTargetLang $dqfTargetLangAssoc */
             $dqfTargetLangAssoc = $childProject->getTargetLanguageAssoc()[ $this->chunk->target ][ $i ];
 

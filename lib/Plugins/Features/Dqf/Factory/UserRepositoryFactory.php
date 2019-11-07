@@ -1,6 +1,6 @@
 <?php
 
-namespace Features\Dqf\Utils\Factory;
+namespace Features\Dqf\Factory;
 
 use Matecat\Dqf\Repository\Persistence\InMemoryDqfUserRepository;
 use Matecat\Dqf\Repository\Persistence\PDODqfUserRepository;

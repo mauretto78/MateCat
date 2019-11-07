@@ -1,6 +1,6 @@
 <?php
 
-namespace Features\Dqf\Utils;
+namespace Features\Dqf\Transformer;
 
 use Chunks_ChunkStruct;
 use Features\Dqf\Model\CachedAttributes\SegmentOrigin;
@@ -8,27 +8,11 @@ use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Model\ExtendedTranslationStruct;
 use Features\Dqf\Model\TranslationVersionDao;
-use Features\Dqf\Service\FileIdMapping;
-use Features\Dqf\Service\ISession;
 use Files_FileDao;
-use INIT;
+use Matecat\Dqf\Cache\BasicAttributes;
 use Translations_SegmentTranslationStruct;
 
-class SegmentTranslationTransformer {
-
-    /**
-     * @var ISession
-     */
-    private $session;
-
-    /**
-     * SegmentTranslationHelper constructor.
-     *
-     * @param ISession $session
-     */
-    public function __construct( ISession $session ) {
-        $this->session = $session;
-    }
+class SegmentTranslationTransformer implements TransformerInterface {
 
     /**
      * ----------------------------------------------------------
@@ -49,7 +33,6 @@ class SegmentTranslationTransformer {
         $segment             = ( new \Segments_SegmentDao() )->getById( $translation->id_segment );
         $chunk               = $translation->getChunk();
         $extendedTranslation = $this->getExtendedTranslationForASegment( $segment, $this->getLimitDate( $translation, $chunk ) );
-        $dqfProject          = ( new DqfProjectMapDao() )->getByType( $chunk, $this->getProjectType( $translation ), true )[ 0 ];
 
         // get $segmentOriginId and $matchRate
         list( $segmentOriginId, $matchRate ) = $this->filterDqfSegmentOriginAndMatchRate( $extendedTranslation, $chunk );
@@ -58,13 +41,7 @@ class SegmentTranslationTransformer {
         $dqfSegment = ( new DqfSegmentsDao() )->getByIdSegment( $segment->id );
 
         $transformedArray                        = [];
-        $transformedArray[ 'sessionId' ]         = $this->session->getSessionId();
-        $transformedArray[ 'clientId' ]          = $this->translationIdToDqf( $dqfProject->id, $extendedTranslation->id_segment );
-        $transformedArray[ 'fileId' ]            = $this->getRemoteFileId( $this->session, $segment->id_file );
-        $transformedArray[ 'projectKey' ]        = $dqfProject->dqf_project_uuid;
-        $transformedArray[ 'projectId' ]         = $dqfProject->dqf_project_id;
-        $transformedArray[ 'targetLangCode' ]    = $chunk->target;
-        $transformedArray[ 'apiKey' ]            = INIT::$DQF_API_KEY;
+        $transformedArray[ 'targetLang' ]        = $chunk->target;
         $transformedArray[ 'sourceSegmentId' ]   = $dqfSegment->dqf_segment_id;
         $transformedArray[ 'translationId' ]     = $dqfSegment->dqf_translation_id;
         $transformedArray[ 'mtEngineId' ]        = 22; // MyMemory
@@ -142,36 +119,12 @@ class SegmentTranslationTransformer {
                 'filterDqfSegmentOriginAndMatchRate', $data, $translation, $chunk
         );
 
-        $object = ( new SegmentOrigin() )->getByName( $data[ 'originName' ] );
+        $object = BasicAttributes::getFromName(BasicAttributes::SEGMENT_ORIGIN,  $data[ 'originName' ]);
 
         return [
-                $object[ 'id' ],
+                $object->id,
                 $data[ 'matchRate' ]
         ];
-    }
-
-    /**
-     * @param $session
-     * @param $fileId
-     *
-     * @return mixed
-     * @throws \Exception
-     */
-    private function getRemoteFileId( $session, $fileId ) {
-        $file          = \Files_FileDao::getById( $fileId );
-        $fileIdMapping = new FileIdMapping( $session, $file );
-
-        return $fileIdMapping->getRemoteId();
-    }
-
-    /**
-     * @param $dqfChildProjectId
-     * @param $translationId
-     *
-     * @return string
-     */
-    private function translationIdToDqf( $dqfChildProjectId, $translationId ) {
-        return Functions::scopeId( $dqfChildProjectId . "-" . $translationId );
     }
 
     /**

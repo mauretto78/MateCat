@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.112.32",
+            "version": "3.113.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "1e211dcb7dcf757b041890f072bbaa593b39512a"
+                "reference": "09998bf4d47195d5c4afa0ffd30e28921ce75f92"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/1e211dcb7dcf757b041890f072bbaa593b39512a",
-                "reference": "1e211dcb7dcf757b041890f072bbaa593b39512a",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/09998bf4d47195d5c4afa0ffd30e28921ce75f92",
+                "reference": "09998bf4d47195d5c4afa0ffd30e28921ce75f92",
                 "shasum": ""
             },
             "require": {
@@ -87,7 +87,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2019-10-30T18:37:36+00:00"
+            "time": "2019-11-05T19:13:36+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -437,16 +437,16 @@
         },
         {
             "name": "matecat/dqf-integrator",
-            "version": "v1.0.24",
+            "version": "v1.0.25",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/dqf-integrator.git",
-                "reference": "c9ed3bf54393f65eb1a22caa194962c7ba531fdf"
+                "reference": "e5bfbf17cc21990f7a827eac22055a3a36e713a0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/c9ed3bf54393f65eb1a22caa194962c7ba531fdf",
-                "reference": "c9ed3bf54393f65eb1a22caa194962c7ba531fdf",
+                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/e5bfbf17cc21990f7a827eac22055a3a36e713a0",
+                "reference": "e5bfbf17cc21990f7a827eac22055a3a36e713a0",
                 "shasum": ""
             },
             "require": {
@@ -491,7 +491,7 @@
                 "dqf",
                 "php"
             ],
-            "time": "2019-10-31T15:03:36+00:00"
+            "time": "2019-11-06T16:23:06+00:00"
         },
         {
             "name": "matecat/simple-s3",
@@ -971,16 +971,16 @@
         },
         {
             "name": "psr/log",
-            "version": "1.1.1",
+            "version": "1.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "bf73deb2b3b896a9d9c75f3f0d88185d2faa27e2"
+                "reference": "446d54b4cb6bf489fc9d75f55843658e6f25d801"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/bf73deb2b3b896a9d9c75f3f0d88185d2faa27e2",
-                "reference": "bf73deb2b3b896a9d9c75f3f0d88185d2faa27e2",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/446d54b4cb6bf489fc9d75f55843658e6f25d801",
+                "reference": "446d54b4cb6bf489fc9d75f55843658e6f25d801",
                 "shasum": ""
             },
             "require": {
@@ -1014,7 +1014,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2019-10-25T08:06:51+00:00"
+            "time": "2019-11-01T11:05:21+00:00"
         },
         {
             "name": "ralouphie/getallheaders",

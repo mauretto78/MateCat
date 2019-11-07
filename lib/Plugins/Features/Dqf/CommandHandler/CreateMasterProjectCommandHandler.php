@@ -3,6 +3,7 @@
 namespace Features\Dqf\CommandHandler;
 
 use Features\Dqf\Command\CreateMasterProjectCommand;
+use Features\Dqf\Factory\ClientFactory;
 use Features\Dqf\Model\DqfFileMapDao;
 use Features\Dqf\Model\DqfFileMapStruct;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapDao;
@@ -10,7 +11,6 @@ use Features\Dqf\Model\DqfFileTargetLangAssocMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfQualityModel;
-use Features\Dqf\Utils\Factory\ClientFactory;
 use Features\Dqf\Utils\ProjectMetadata;
 use Matecat\Dqf\Model\Entity\File;
 use Matecat\Dqf\Model\Entity\FileTargetLang;
@@ -67,14 +67,14 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
         $this->command = $command;
         $this->project = \Projects_ProjectDao::findById( $command->id_project );
 
-        if ( empty($this->project->getOriginalOwner()->getUid()) ){
+        if ( empty( $this->project->getOriginalOwner()->getUid() ) ) {
             throw new \Exception( 'The project has not an owner' );
         }
 
-        $sessionId = $this->getSessionId($this->project->getOriginalOwner()->getUid());
-        $genericEmail = $this->getGenericEmail($this->project->getOriginalOwner()->getUid());
+        $sessionId    = $this->getSessionId( $this->project->getOriginalOwner()->getUid() );
+        $genericEmail = $this->getGenericEmail( $this->project->getOriginalOwner()->getUid() );
 
-        $this->repo    = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
+        $this->repo = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
 
     /**
@@ -87,12 +87,12 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
         $clientId           = \Utils::createToken();
 
         $masterProject = new MasterProject(
-            $this->project->name,
-            $this->command->source_language,
-            (int)$projectInputParams['contentTypeId'],
-            (int)$projectInputParams['industryId'],
-            (int)$projectInputParams['processId'],
-            (int)$projectInputParams['qualityLevelId']
+                $this->project->name,
+                $this->command->source_language,
+                (int)$projectInputParams[ 'contentTypeId' ],
+                (int)$projectInputParams[ 'industryId' ],
+                (int)$projectInputParams[ 'processId' ],
+                (int)$projectInputParams[ 'qualityLevelId' ]
         );
 
         $masterProject->setClientId( $clientId );
@@ -204,8 +204,8 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
         $files = \Files_FileDao::getByProjectId( $this->project->id );
 
         foreach ( $files as $index => $file ) {
-            $segments = ( new \Segments_SegmentDao() )->getByFileId( $file->id );
-            $dqfFile  = $masterProject->getFiles()[ $index ];
+            $segments     = ( new \Segments_SegmentDao() )->getByFileId( $file->id );
+            $dqfFile      = $masterProject->getFiles()[ $index ];
             $global_index = 1;
 
             foreach ( $segments as $segment ) {
