@@ -7,5 +7,4 @@ use Features\Dqf\Command\CommandInterface;
 
 class CreateTranslationBatchCommand extends AbstractCommand implements CommandInterface {
     public $id_job;
-    public $id_file;
 }

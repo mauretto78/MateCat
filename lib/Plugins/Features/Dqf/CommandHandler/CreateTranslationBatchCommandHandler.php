@@ -2,14 +2,15 @@
 
 namespace Features\Dqf\CommandHandler;
 
+use Features\Dqf\Command\CommandInterface;
 use Features\Dqf\Command\CreateTranslationBatchCommand;
 use Features\Dqf\Factory\ClientFactory;
 use Features\Dqf\Model\DqfFileMapDao;
-use Features\Dqf\Model\DqfFileMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Transformer\SegmentTranslationTransformer;
+use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
 use Matecat\Dqf\Model\Entity\MasterProject;
@@ -54,17 +55,12 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
     private $dqfProjectMapStruct;
 
     /**
-     * @var DqfFileMapStruct
-     */
-    private $dqfFileMapStruct;
-
-    /**
      * @var FilesRepository
      */
     private $filesRepository;
 
     /**
-     * @param \Features\Dqf\Command\CommandInterface $command
+     * @param CommandInterface $command
      *
      * @return mixed|void
      * @throws \Exception
@@ -97,17 +93,14 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
 
         // get the last child project on DB associated with the chunk
         $dqfProjectMapDao          = new DqfProjectMapDao();
-        $projects                  = $dqfProjectMapDao->getByType( $this->chunk, 'translation' );
+        $projects                  = $dqfProjectMapDao->getByType( $this->chunk, Constants::PROJECT_TYPE_TRANSLATION );
         $this->dqfProjectMapStruct = end( $projects );
 
-        // get the DqfId of file
-        $dqfFileMapDao          = new DqfFileMapDao();
-        $this->dqfFileMapStruct = $dqfFileMapDao->findOne( $command->id_file, $command->id_job );
-
+        // set repos
         $this->masterProjectRepository = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
         $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
         $this->translationRepository   = new TranslationRepository( ClientFactory::create(), $sessionId, $genericEmail );
-        $this->filesRepository   = new FilesRepository( ClientFactory::create(), $sessionId, $genericEmail );
+        $this->filesRepository         = new FilesRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
 
     /**
@@ -116,42 +109,53 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
     private function submitBatch() {
         $masterProject  = $this->getDqfMasterProject();
         $childProject   = $this->getDqfChildProject( $masterProject );
-        $file           = $this->getDqfFile( $childProject );
+        $dqfFileMapDao  = new DqfFileMapDao();
+        $transformer    = new SegmentTranslationTransformer();
+        $dqfSegmentsDao = new DqfSegmentsDao();
 
-        $translationBatch = new TranslationBatch( $childProject, $file, $this->chunk->target );
-        $transformer      = new SegmentTranslationTransformer();
+        foreach ( $this->chunk->getFiles() as $file ) {
 
-        foreach ( $this->chunk->getTranslations() as $translation ) {
-            $transformedTranslation = $transformer->transform( $translation );
+            // get the DqfId of file
+            $dqfFileMapStruct = $dqfFileMapDao->findOne( $file->id, $this->command->id_job );
+            $dqfFile          = $this->getDqfFile( $childProject, $dqfFileMapStruct->dqf_id );
 
-            $mtEngine        = $transformedTranslation[ 'mtEngineId' ];
-            $segmentOriginId = $transformedTranslation[ 'segmentOriginId' ];
-            $targetLang      = $transformedTranslation[ 'targetLang' ];
-            $targetSegment   = $transformedTranslation[ 'targetSegment' ];
-            $editedSegment   = $transformedTranslation[ 'editedSegment' ];
-            $sourceSegment   = $this->getDqfSourceSegment($masterProject, $transformedTranslation[ 'sourceSegmentId' ]);
+            // init translationBatch
+            $translationBatch = new TranslationBatch( $childProject, $dqfFile, $this->chunk->target );
 
-            $segmentTranslation = new TranslatedSegment( $mtEngine, $segmentOriginId, $targetLang, $sourceSegment, $targetSegment, $editedSegment );
-            $segmentTranslation->setMatchRate($transformedTranslation[ 'matchRate' ]);
-            $segmentTranslation->setTime($transformedTranslation[ 'time' ]);
-            $segmentTranslation->setIndexNo($transformedTranslation[ 'indexNo' ]);
+            // loop all translations by files
+            $translations = ( new \Translations_SegmentTranslationDao() )->getByFile( $file );
+            foreach ( $translations as $translation ) {
+                $transformedTranslation = $transformer->transform( $translation );
 
-            $translationBatch->addSegment( $segmentTranslation );
+                $mtEngine        = $transformedTranslation[ 'mtEngineId' ];
+                $segmentOriginId = $transformedTranslation[ 'segmentOriginId' ];
+                $targetLang      = $transformedTranslation[ 'targetLang' ];
+                $targetSegment   = $transformedTranslation[ 'targetSegment' ];
+                $editedSegment   = $transformedTranslation[ 'editedSegment' ];
+                $sourceSegment   = $this->getDqfSourceSegment( $masterProject, $transformedTranslation[ 'sourceSegmentId' ] );
+
+                $segmentTranslation = new TranslatedSegment( $mtEngine, $segmentOriginId, $targetLang, $sourceSegment, $targetSegment, $editedSegment );
+                $segmentTranslation->setMatchRate( $transformedTranslation[ 'matchRate' ] );
+                $segmentTranslation->setTime( $transformedTranslation[ 'time' ] );
+                $segmentTranslation->setIndexNo( $transformedTranslation[ 'indexNo' ] );
+
+                $translationBatch->addSegment( $segmentTranslation );
+            }
+
+            /** @var TranslationBatch $translationBatch */
+            $translationBatch = $this->translationRepository->save( $translationBatch );
+
+            // save segment translations reference in a transaction
+            $segmentReferences = [];
+
+            foreach ( $translationBatch->getSegments() as $index => $segment ) {
+                $segmentReferences[] = (int)$this->chunk->getTranslations()[ $index ]->id_segment;
+                $segmentReferences[] = (int)$segment->getSourceSegment()->getDqfId();
+                $segmentReferences[] = (int)$segment->getDqfId();
+            }
+
+            $dqfSegmentsDao->insertInATransaction( $segmentReferences );
         }
-
-        /** @var TranslationBatch $translationBatch */
-        $translationBatch = $this->translationRepository->save( $translationBatch );
-
-        // save segment translations reference in a transaction
-        $segmentReferences = [];
-
-        foreach ($translationBatch->getSegments() as $index => $segment) {
-            $segmentReferences[] = (int)$this->chunk->getTranslations()[$index]->id_segment;
-            $segmentReferences[] = (int)$segment->getSourceSegment()->getDqfId();
-            $segmentReferences[] = (int)$segment->getDqfId();
-        }
-
-        (new DqfSegmentsDao())->insertInATransaction($segmentReferences);
     }
 
     /**
@@ -186,13 +190,13 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
      *
      * @return File
      */
-    private function getDqfFile( ChildProject $childProject ) {
-        return $this->filesRepository->getByIdAndChildProject($childProject->getDqfId(), $childProject->getDqfUuid(), $this->dqfFileMapStruct->dqf_id);
+    private function getDqfFile( ChildProject $childProject, $dqfFileMapStructId ) {
+        return $this->filesRepository->getByIdAndChildProject( $childProject->getDqfId(), $childProject->getDqfUuid(), $dqfFileMapStructId );
     }
 
     /**
      * @param MasterProject $masterProject
-     * @param int $sourceSegmentDqfId
+     * @param int           $sourceSegmentDqfId
      *
      * @return SourceSegment|null
      */
@@ -200,8 +204,8 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
         $sourceSegments = $masterProject->getSourceSegments();
 
         /** @var SourceSegment $sourceSegment */
-        foreach ($sourceSegments as $sourceSegment){
-            if($sourceSegment->getDqfId() === $sourceSegmentDqfId ){
+        foreach ( $sourceSegments as $sourceSegment ) {
+            if ( $sourceSegment->getDqfId() === $sourceSegmentDqfId ) {
                 return $sourceSegment;
             }
         }

@@ -8,6 +8,7 @@ use Features\Dqf\Model\DqfFileTargetLangAssocMapDao;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
+use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\FileTargetLang;
 use Matecat\Dqf\Repository\Api\ChildProjectRepository;
@@ -47,6 +48,12 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
             throw new \Exception( 'Provided command is not a valid instance of CreateChildProjectCommand class' );
         }
 
+        $allowed = [ Constants::PROJECT_TYPE_TRANSLATION, Constants::PROJECT_TYPE_REVIEW ];
+
+        if ( false === in_array( $command->type, $allowed ) ) {
+            throw new \DomainException( $command->type . 'is not a valid type. [Allowed: ' . implode( ',', $allowed ) . ']' );
+        }
+
         $this->setUp( $command );
 
         $childProject = $this->createProject();
@@ -78,17 +85,32 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
      * @throws \Exception
      */
     private function createProject() {
-        $id_project          = \Database::obtain()->nextSequence( 'id_dqf_project' )[ 0 ];
-        $clientId            = \Utils::createToken();
-        $parentMasterProject = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
+        $id_project = \Database::obtain()->nextSequence( 'id_dqf_project' )[ 0 ];
+        $clientId   = \Utils::createToken();
 
-        $dqfMasterProject = $this->masterProjectRepository->get( (int)$parentMasterProject->dqf_project_id, $parentMasterProject->dqf_project_uuid );
+        //
+        // set the parent project
+        // ====================================
+        // if the project is a 'translation', set the master root project
+        // otherwise, if the project is a 'revision', set the 'translation'
+        //
+        if ( $this->command->type === Constants::PROJECT_TYPE_TRANSLATION ) {
+            $parentProject = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
+        } elseif ( $this->command->type === Constants::PROJECT_TYPE_REVIEW ) {
+            $parentProject = end( ( new DqfProjectMapDao() )->getChildByChunk( $this->chunk ) ); // get the last project saved on DQF by chunk
+        }
+
+        $dqfParentProject = $this->masterProjectRepository->get( (int)$parentProject->dqf_project_id, $parentProject->dqf_project_uuid );
 
         $childProject = new ChildProject( $this->command->type );
-        $childProject->setParentProject( $dqfMasterProject );
+        $childProject->setParentProject( $dqfParentProject );
         $childProject->setClientId( $clientId );
 
         $dqfChildProject = $this->childProjectRepository->save( $childProject );
+
+        // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
+        // THIS MUST BE CHANGED
 
         $struct = new DqfProjectMapStruct( [
                 'id'               => $id_project,
@@ -99,11 +121,11 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
                 'dqf_client_id'    => $clientId,
                 'dqf_project_id'   => $dqfChildProject->getDqfId(),
                 'dqf_project_uuid' => $dqfChildProject->getDqfUuid(),
-                'dqf_parent_id'    => $dqfMasterProject->getDqfId(),
-                'dqf_parent_uuid'  => $dqfMasterProject->getDqfUuid(),
+                'dqf_parent_id'    => $dqfParentProject->getDqfId(),
+                'dqf_parent_uuid'  => $dqfParentProject->getDqfUuid(),
                 'create_date'      => \Utils::mysqlTimestamp( time() ),
                 'project_type'     => $this->command->type,
-                'uid'              => $this->chunk->getProject()->getOriginalOwner()->getUid() // THIS NEEDS REFACTORING!!!!!!!!!!!!!!!!!!
+                'uid'              => $uid
         ] );
 
         DqfProjectMapDao::insertStructWithAutoIncrements( $struct );

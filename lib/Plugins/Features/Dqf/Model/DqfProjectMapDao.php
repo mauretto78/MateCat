@@ -151,7 +151,8 @@ class DqfProjectMapDao extends DataAccess_AbstractDao  {
     public function getChildByChunk( $chunk ) {
         $sql = "SELECT * FROM dqf_projects_map WHERE id_job = :id_job
                   AND password = :password AND dqf_parent_uuid IS NOT NULL
-                  AND archive_date IS NULL " ;
+                  AND archive_date IS NULL 
+                  ORDER BY id " ;
 
         $conn = Database::obtain()->getConnection();
 
