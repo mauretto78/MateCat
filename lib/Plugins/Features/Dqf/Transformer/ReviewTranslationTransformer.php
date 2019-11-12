@@ -14,8 +14,9 @@ use Files_FileDao;
 use INIT;
 use Translations_SegmentTranslationStruct;
 
-class ReviewTransformer implements TransformerInterface {
+class ReviewTranslationTransformer implements TranslationTransformerInterface {
 
     public function transform( Translations_SegmentTranslationStruct $translation ) {
+
     }
 }

@@ -12,7 +12,7 @@ use Files_FileDao;
 use Matecat\Dqf\Cache\BasicAttributes;
 use Translations_SegmentTranslationStruct;
 
-class SegmentTranslationTransformer implements TransformerInterface {
+class SegmentTranslationTransformer implements TranslationTransformerInterface {
 
     /**
      * ----------------------------------------------------------

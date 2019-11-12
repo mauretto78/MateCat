@@ -4,9 +4,11 @@ namespace Features\Dqf\Transformer;
 
 use Translations_SegmentTranslationStruct;
 
-interface TransformerInterface {
+interface TranslationTransformerInterface {
 
     /**
+     * Transform a segment translation to an array for DQF analysis
+     *
      * @param Translations_SegmentTranslationStruct $translation
      *
      * @return array
