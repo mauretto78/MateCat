@@ -9,13 +9,14 @@ use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Transformer\ReviewTranslationTransformer;
-use Features\Dqf\Transformer\SegmentTranslationTransformer;
 use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
-use Matecat\Dqf\Model\Entity\MasterProject;
+use Matecat\Dqf\Model\Entity\File;
+use Matecat\Dqf\Model\ValueObject\ReviewBatch;
 use Matecat\Dqf\Repository\Api\ChildProjectRepository;
 use Matecat\Dqf\Repository\Api\FilesRepository;
 use Matecat\Dqf\Repository\Api\MasterProjectRepository;
+use Matecat\Dqf\Repository\Api\ReviewRepository;
 use Matecat\Dqf\Repository\Api\TranslationRepository;
 
 class CreateReviewCommandHandler extends AbstractCommandHanlder {
@@ -56,6 +57,11 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
     private $filesRepository;
 
     /**
+     * @var ReviewRepository
+     */
+    private $reviewRepository;
+
+    /**
      * @param CreateReviewCommand $command
      *
      * @return mixed
@@ -87,7 +93,7 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
         $genericEmail = $this->getGenericEmail( $uid );
 
         // get the last child project on DB associated with the chunk
-        $dqfProjectMapDao          = new DqfProjectMapDao();
+        $dqfProjectMapDao = new DqfProjectMapDao();
 
         $projects                  = $dqfProjectMapDao->getByType( $this->chunk, Constants::PROJECT_TYPE_REVIEW );
         $this->dqfProjectMapStruct = end( $projects );
@@ -97,16 +103,48 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
         $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
         $this->translationRepository   = new TranslationRepository( ClientFactory::create(), $sessionId, $genericEmail );
         $this->filesRepository         = new FilesRepository( ClientFactory::create(), $sessionId, $genericEmail );
+        $this->reviewRepository        = new ReviewRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
 
     private function submitBatch() {
         $parentProject  = $this->getDqfParentProject();
-        $childProject   = $this->getDqfChildProject( $parentProject );
+        $childReview    = $this->getDqfChildProject( $parentProject );
         $dqfFileMapDao  = new DqfFileMapDao();
         $transformer    = new ReviewTranslationTransformer();
         $dqfSegmentsDao = new DqfSegmentsDao();
 
+        // loop all chunk files
+        foreach ( $this->chunk->getFiles() as $file ) {
 
+            // get the DqfId of file
+            $dqfFileMapStruct = $dqfFileMapDao->findOne( $file->id, $this->command->id_job );
+            $dqfFile          = $this->getDqfFile( $childReview, $dqfFileMapStruct->dqf_id );
+
+
+            // loop all segmentTranslation WITH ISSUES by files
+
+
+
+            // loop all segmentTranslation by files
+            $translations = ( new \Translations_SegmentTranslationDao() )->getByFile( $file );
+            foreach ( $translations as $translation ) {
+
+                // get dqf id of segment and translation
+                $aa = $dqfSegmentsDao->getByIdSegmentAndDqfProjectId($translation->id_segment, $parentProject->getDqfId());
+
+                // get the TranslatedSegment
+                $translatedSegment = $this->translationRepository->getSegmentTranslation($childReview, $dqfFileMapStruct->dqf_id, $this->chunk->target, $aa->dqf_segment_id, $aa->dqf_translation_id);
+
+                // init ReviewBatch
+                $batchId     = \Utils::createToken();
+                $reviewBatch = new ReviewBatch( $childReview, $dqfFile, $this->chunk->target, $translatedSegment, $batchId );
+
+                // add all the issues for the segmentTranslation on Matecat
+
+
+                $this->reviewRepository->save( $reviewBatch );
+            }
+        }
 
 
 //        $correction = new RevisionCorrection('Another review comment', 10000);
@@ -156,5 +194,15 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
         $childProject->setParentProject( $parentProject );
 
         return $childProject;
+    }
+
+    /**
+     * @param ChildProject $childProject
+     * @param int          $dqfFileMapStructId
+     *
+     * @return File
+     */
+    private function getDqfFile( ChildProject $childProject, $dqfFileMapStructId ) {
+        return $this->filesRepository->getByIdAndChildProject( $childProject->getDqfId(), $childProject->getDqfUuid(), $dqfFileMapStructId );
     }
 }

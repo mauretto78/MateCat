@@ -108,14 +108,13 @@ class DqfSegmentsDao extends DataAccess_AbstractDao {
     }
 
     /**
-     * @param array $segments
+     * @param array $values
      *
      * @throws \Exception
      */
     public function insertInATransaction( array $values ) {
-        $sql = " INSERT INTO dqf_segments (id_segment, dqf_translation_id) VALUES ";
-        $sql .= implode( ', ', array_fill( 0, count( $values ), " ( ?, ? ) " ) );
-        $sql .= " ON DUPLICATE KEY UPDATE dqf_segments.dqf_translation_id = VALUES(dqf_segments.dqf_translation_id) ";
+        $sql = " INSERT INTO dqf_segments (id_segment, dqf_segment_id, dqf_translation_id, dqf_parent_project_id) VALUES ( ?, ?, ?, ? )  
+                ON DUPLICATE KEY UPDATE dqf_segments.dqf_translation_id = VALUES(dqf_segments.dqf_translation_id) ";
 
         $conn = $this->getDatabaseHandler()->getConnection();
 
@@ -132,5 +131,29 @@ class DqfSegmentsDao extends DataAccess_AbstractDao {
         }
 
         $conn->commit();
+    }
+
+    /**
+     * @param int $id_segment
+     * @param int $dqf_parent_project_id
+     *
+     * @return DqfSegmentsStruct
+     */
+    public function getByIdSegmentAndDqfProjectId($id_segment, $dqf_parent_project_id){
+        $sql = " SELECT * FROM dqf_segments
+                WHERE id_segment = :id_segment 
+                AND dqf_parent_project_id = :dqf_parent_project_id ";
+
+        $conn = $this->getDatabaseHandler()->getConnection();
+        $stmt  = $conn->prepare( $sql );
+
+        $stmt->execute( [
+            ':id_segment' => $id_segment,
+            ':dqf_parent_project_id' => $dqf_parent_project_id,
+        ] );
+
+        $stmt->setFetchMode( PDO::FETCH_CLASS, '\Features\Dqf\Model\DqfSegmentsStruct' );
+
+        return $stmt->fetch();
     }
 }

@@ -122,7 +122,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
             // init translationBatch
             $translationBatch = new TranslationBatch( $childProject, $dqfFile, $this->chunk->target );
 
-            // loop all translations by files
+            // loop all segmentTranslation by files
             $translations = ( new \Translations_SegmentTranslationDao() )->getByFile( $file );
             foreach ( $translations as $translation ) {
                 $transformedTranslation = $transformer->transform( $translation );
@@ -152,6 +152,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
                 $segmentReferences[] = (int)$this->chunk->getTranslations()[ $index ]->id_segment;
                 $segmentReferences[] = (int)$segment->getSourceSegment()->getDqfId();
                 $segmentReferences[] = (int)$segment->getDqfId();
+                $segmentReferences[] = (int)$childProject->getDqfId();
             }
 
             $dqfSegmentsDao->insertInATransaction( $segmentReferences );
@@ -171,7 +172,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
     /**
      * @param MasterProject $masterProject
      *
-     * @return mixed
+     * @return ChildProject
      */
     private function getDqfChildProject( MasterProject $masterProject ) {
 
@@ -187,6 +188,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
 
     /**
      * @param ChildProject $childProject
+     * @param int          $dqfFileMapStructId
      *
      * @return File
      */
