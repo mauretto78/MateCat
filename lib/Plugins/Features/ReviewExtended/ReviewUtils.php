@@ -27,11 +27,15 @@ class ReviewUtils {
      */
     public static function formatStats( $statsArray, $chunkReviews, $options = [] ) {
         $statsArray [ 'revises' ] = [];
+        $chunkReviewDao           = new ChunkReviewDao();
 
         /** @var ChunkReviewStruct $chunkReview */
         foreach ( $chunkReviews as $chunkReview ) {
 
-            $advancementWcAsFloat        = floatval( $chunkReview->advancement_wc );
+            // Get the actual advancement WC from the DB instead of $chunkReview instance, because it's a dirty vector and it's not updated
+            $chunkReviewFromDb = $chunkReviewDao->findByJobIdPasswordAndSourcePage($chunkReview->getChunk()->id, $chunkReview->getChunk()->password, $chunkReview->source_page);
+
+            $advancementWcAsFloat        = floatval( $chunkReviewFromDb->advancement_wc ); // DIRTY VECTOR
             $correctAdvancementWCAsFloat = floatval( $correctAdvancementWC = self::getCorrectAdvancementWC( $chunkReview ) );
 
             // check if the current advancement_wc corresponds to correct advancement word count
@@ -45,11 +49,11 @@ class ReviewUtils {
 
                 $chunkReview->advancement_wc = $correctAdvancementWC;
 
-                $segmentId = isset($options['segmentId']) ? $options['segmentId'] : null;
-                $requestUri = isset($options['requestUri']) ? $options['requestUri'] : null;
+                $segmentId  = isset( $options[ 'segmentId' ] ) ? $options[ 'segmentId' ] : null;
+                $requestUri = isset( $options[ 'requestUri' ] ) ? $options[ 'requestUri' ] : null;
 
-                $htmlMessageForEmail = self::getHtmlMessageForEmail($project, $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId, $requestUri);
-                $arrayMessageForLogs  = self::getArrayMessageForLogs($project, $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId, $requestUri);
+                $htmlMessageForEmail = self::getHtmlMessageForEmail( $project, $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId, $requestUri );
+                $arrayMessageForLogs = self::getArrayMessageForLogs( $project, $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId, $requestUri );
 
                 //\Utils::sendErrMailReport( $htmlMessageForEmail );
                 \Log::doJsonLog( $arrayMessageForLogs );
@@ -75,19 +79,18 @@ class ReviewUtils {
      *
      * @return string
      */
-    private static function getHtmlMessageForEmail( $project, ChunkReviewStruct $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId = null, $requestUri = null)
-    {
+    private static function getHtmlMessageForEmail( $project, ChunkReviewStruct $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId = null, $requestUri = null ) {
         $msgEmail = "<p>Wrong advancement word count found for project with ID: " . $project->id . ".</p>";
         $msgEmail .= "<p>--------------------------------</p>";
         $msgEmail .= "<ul>";
         $msgEmail .= "<li>PROJECT ID: " . $project->id . "</li>";
         $msgEmail .= "<li>JOB ID: " . $chunkReview->getChunk()->id . "</li>";
 
-        if(null !== $segmentId) {
+        if ( null !== $segmentId ) {
             $msgEmail .= "<li>SEGMENT ID: " . $segmentId . "</li>";
         }
 
-        if(null !== $requestUri) {
+        if ( null !== $requestUri ) {
             $msgEmail .= "<li>REQUEST URI: " . $requestUri . "</li>";
         }
 
@@ -112,25 +115,24 @@ class ReviewUtils {
      *
      * @return array
      */
-    private static function getArrayMessageForLogs( $project, ChunkReviewStruct $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId = null, $requestUri = null)
-    {
-        $msgArray = [];
-        $msgArray['message'] = "Wrong advancement word count found for project with ID: " . $project->id . ". Recount done.";
-        $msgArray['payload'] = [];
-        $msgArray['payload']['PROJECT_ID'] = $project->id;
-        $msgArray['payload']['JOB_ID'] = $chunkReview->getChunk()->id;
+    private static function getArrayMessageForLogs( $project, ChunkReviewStruct $chunkReview, $advancementWcAsFloat, $correctAdvancementWCAsFloat, $segmentId = null, $requestUri = null ) {
+        $msgArray                              = [];
+        $msgArray[ 'message' ]                 = "Wrong advancement word count found for project with ID: " . $project->id . ". Recount done.";
+        $msgArray[ 'payload' ]                 = [];
+        $msgArray[ 'payload' ][ 'PROJECT_ID' ] = $project->id;
+        $msgArray[ 'payload' ][ 'JOB_ID' ]     = $chunkReview->getChunk()->id;
 
-        if(null !== $segmentId) {
-            $msgArray['payload']['SEGMENT_ID'] = $segmentId;
+        if ( null !== $segmentId ) {
+            $msgArray[ 'payload' ][ 'SEGMENT_ID' ] = $segmentId;
         }
 
-        if(null !== $requestUri) {
-            $msgArray['payload']['REQUEST_RUI'] = $requestUri;
+        if ( null !== $requestUri ) {
+            $msgArray[ 'payload' ][ 'REQUEST_RUI' ] = $requestUri;
         }
 
-        $msgArray['payload']['ACTUAL_SOURCE_PAGE'] = $chunkReview->source_page;
-        $msgArray['payload']['ACTUAL_ADVANCED_WC'] = $advancementWcAsFloat;
-        $msgArray['payload']['CALCULATED_WC'] = $correctAdvancementWCAsFloat;
+        $msgArray[ 'payload' ][ 'ACTUAL_SOURCE_PAGE' ] = $chunkReview->source_page;
+        $msgArray[ 'payload' ][ 'ACTUAL_ADVANCED_WC' ] = $advancementWcAsFloat;
+        $msgArray[ 'payload' ][ 'CALCULATED_WC' ]      = $correctAdvancementWCAsFloat;
 
         return $msgArray;
     }
