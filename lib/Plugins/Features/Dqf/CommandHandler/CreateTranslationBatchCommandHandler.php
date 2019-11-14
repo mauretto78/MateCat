@@ -2,6 +2,7 @@
 
 namespace Features\Dqf\CommandHandler;
 
+use Constants_TranslationStatus;
 use Features\Dqf\Command\CommandInterface;
 use Features\Dqf\Command\CreateTranslationBatchCommand;
 use Features\Dqf\Factory\ClientFactory;
@@ -122,24 +123,30 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
             // init translationBatch
             $translationBatch = new TranslationBatch( $childProject, $dqfFile, $this->chunk->target );
 
-            // loop all segmentTranslation by files
-            $translations = ( new \Translations_SegmentTranslationDao() )->getByFile( $file );
-            foreach ( $translations as $translation ) {
-                $transformedTranslation = $transformer->transform( $translation );
+            // get all segmentTranslation by files
+            $translatedSegmentTranslations = ( new \Translations_SegmentTranslationDao() )->getByFile( $file );
+            foreach ( $translatedSegmentTranslations as $translation ) {
 
-                $mtEngine        = $transformedTranslation[ 'mtEngineId' ];
-                $segmentOriginId = $transformedTranslation[ 'segmentOriginId' ];
-                $targetLang      = $transformedTranslation[ 'targetLang' ];
-                $targetSegment   = $transformedTranslation[ 'targetSegment' ];
-                $editedSegment   = $transformedTranslation[ 'editedSegment' ];
-                $sourceSegment   = $this->getDqfSourceSegment( $masterProject, $transformedTranslation[ 'sourceSegmentId' ] );
+                // if the segment is NOT a new or draft
+                if( $translation->status !== Constants_TranslationStatus::STATUS_NEW and $translation->status !== Constants_TranslationStatus::STATUS_DRAFT ){
 
-                $segmentTranslation = new TranslatedSegment( $mtEngine, $segmentOriginId, $targetLang, $sourceSegment, $targetSegment, $editedSegment );
-                $segmentTranslation->setMatchRate( $transformedTranslation[ 'matchRate' ] );
-                $segmentTranslation->setTime( $transformedTranslation[ 'time' ] );
-                $segmentTranslation->setIndexNo( $transformedTranslation[ 'indexNo' ] );
+                    // transform $translation into an array containing all infos needed for DQF
+                    $transformedTranslation = $transformer->transform( $translation );
 
-                $translationBatch->addSegment( $segmentTranslation );
+                    $mtEngine        = $transformedTranslation[ 'mtEngineId' ];
+                    $segmentOriginId = $transformedTranslation[ 'segmentOriginId' ];
+                    $targetLang      = $transformedTranslation[ 'targetLang' ];
+                    $targetSegment   = $transformedTranslation[ 'targetSegment' ];
+                    $editedSegment   = $transformedTranslation[ 'editedSegment' ];
+                    $sourceSegment   = $this->getDqfSourceSegment( $masterProject, $transformedTranslation[ 'sourceSegmentId' ] );
+
+                    $segmentTranslation = new TranslatedSegment( $mtEngine, $segmentOriginId, $targetLang, $sourceSegment, $targetSegment, $editedSegment );
+                    $segmentTranslation->setMatchRate( $transformedTranslation[ 'matchRate' ] );
+                    $segmentTranslation->setTime( $transformedTranslation[ 'time' ] );
+                    $segmentTranslation->setIndexNo( $transformedTranslation[ 'indexNo' ] );
+
+                    $translationBatch->addSegment( $segmentTranslation );
+                }
             }
 
             /** @var TranslationBatch $translationBatch */
@@ -193,7 +200,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
      * @return File
      */
     private function getDqfFile( ChildProject $childProject, $dqfFileMapStructId ) {
-        return $this->filesRepository->getByIdAndChildProject( $childProject->getDqfId(), $childProject->getDqfUuid(), $dqfFileMapStructId );
+        return $this->filesRepository->getByIdAndChildProject( (int)$childProject->getDqfId(), $childProject->getDqfUuid(), (int)$dqfFileMapStructId );
     }
 
     /**

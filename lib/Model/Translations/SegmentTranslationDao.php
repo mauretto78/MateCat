@@ -139,6 +139,47 @@ class Translations_SegmentTranslationDao extends DataAccess_AbstractDao {
         return $stmt->fetchAll();
     }
 
+    /**
+     * @param int    $id_file
+     * @param int    $id_job
+     * @param string $status
+     *
+     * @return Translations_SegmentTranslationStruct[]
+     */
+    public function getByFileJobIdAndStatus( $id_file, $id_job, $status ) {
+
+        $allowed = [
+            Constants_TranslationStatus::STATUS_NEW,
+            Constants_TranslationStatus::STATUS_DRAFT,
+            Constants_TranslationStatus::STATUS_TRANSLATED,
+            Constants_TranslationStatus::STATUS_APPROVED,
+            Constants_TranslationStatus::STATUS_REJECTED,
+            Constants_TranslationStatus::STATUS_FIXED,
+            Constants_TranslationStatus::STATUS_REBUTTED,
+        ];
+
+        if(false === in_array($status, $allowed)){
+            throw new \InvalidArgumentException($status . ' is not a valid status. [Allowed values:  ' . implode(',', $allowed) . '] ');
+        }
+
+        $query = "SELECT * FROM segment_translations st " .
+                " JOIN segments s on s.id  = st.id_segment AND s.id_file = :id_file " .
+                " AND st.id_job = :id_job " .
+                " AND st.status = :status " .
+                " WHERE s.show_in_cattool = 1 ";
+
+        $conn = $this->database->getConnection();
+        $stmt = $conn->prepare( $query );
+        $stmt->setFetchMode( PDO::FETCH_CLASS, 'Translations_SegmentTranslationStruct' );
+        $stmt->execute( [
+                'id_file' => $id_file,
+                'id_job' => $id_job,
+                'status' => $status,
+        ] );
+
+        return $stmt->fetchAll();
+    }
+
     protected function _buildResult( $array_result ) {
 
     }

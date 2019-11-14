@@ -10,7 +10,7 @@ namespace API\App;
 
 use Bootstrap;
 use Exceptions\NotFoundException;
-use Features\Dqf\Utils\Factory\SessionProviderFactory;
+use Features\Dqf\Factory\SessionProviderFactory;
 use Features\Dqf\Utils\UserMetadata;
 
 class UserMetadataController extends AbstractStatefulKleinController {

@@ -2,6 +2,11 @@
 
 use ActivityLog\Activity;
 use ActivityLog\ActivityLogStruct;
+use Features\Dqf\Command\CreateMasterProjectCommand;
+use Features\Dqf\Command\CreateChildProjectCommand;
+use Features\Dqf\CommandHandler\CreateMasterProjectCommandHandler;
+use Features\Dqf\CommandHandler\CreateChildProjectCommandHandler;
+use Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler;
 use Features\Dqf\Command\CreateTranslationBatchCommand;
 
 class manageController extends viewController {
@@ -24,14 +29,54 @@ class manageController extends viewController {
 
     public function doAction() {
 
-        $command = new CreateTranslationBatchCommand([
-                'id_job' => 6,
-                'id_file' => 6,
-        ]);
+        try {
 
-        (new \Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler())->handle($command);
+            // 1. create Master Project
+            $command = new CreateMasterProjectCommand([
+                    'id_project' => 2,
+                    'source_language' => 'en-US',
+                    'file_segments_count' => [
+                            2 => 4
+                    ],
+            ]);
 
-        echo 'OK';
+            (new CreateMasterProjectCommandHandler())->handle($command);
+
+
+            // 2. Create Child Project translation
+            $command = new CreateChildProjectCommand([
+                    'id_job' => 2,
+                    'type' => 'translation',
+
+            ]);
+            (new CreateChildProjectCommandHandler())->handle($command);
+
+            // 3. Update translation batch
+            $command = new CreateTranslationBatchCommand([
+                    'id_job' => 2,
+            ]);
+            (new CreateTranslationBatchCommandHandler())->handle($command);
+
+            // 4. Create Child Project review
+
+
+            // 5. Update reviews
+
+        } catch (\Exception $exception){
+            echo $exception->getMessage();
+        }
+
+
+
+
+//        $command = new CreateTranslationBatchCommand([
+//                'id_job' => 6,
+//                'id_file' => 6,
+//        ]);
+//
+//        (new \Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler())->handle($command);
+
+        var_dump('OK');
         die();
 
 

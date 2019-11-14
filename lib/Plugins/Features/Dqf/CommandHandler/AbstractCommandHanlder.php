@@ -19,6 +19,10 @@ abstract class AbstractCommandHanlder implements CommandHandlerInterface {
         $userRepo = UserRepositoryFactory::create();
         $dqfUser = $userRepo->getByExternalId($externalId);
 
+        if ( false === $dqfUser ) {
+            throw new \Exception('No DQF user is already logged in.');
+        }
+
         // DECRYPT
         $dataEncryptor = new DataEncryptor(\INIT::$DQF_ENCRYPTION_KEY, \INIT::$DQF_ENCRYPTION_IV);
 

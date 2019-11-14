@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.115.2",
+            "version": "3.117.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "15792196be1b3b1b5663bca7b6cd021d005e2265"
+                "reference": "3fc3d2c1962f34becc4313c839ed8b659d045114"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/15792196be1b3b1b5663bca7b6cd021d005e2265",
-                "reference": "15792196be1b3b1b5663bca7b6cd021d005e2265",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/3fc3d2c1962f34becc4313c839ed8b659d045114",
+                "reference": "3fc3d2c1962f34becc4313c839ed8b659d045114",
                 "shasum": ""
             },
             "require": {
@@ -87,7 +87,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2019-11-11T19:22:34+00:00"
+            "time": "2019-11-13T19:14:25+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -437,16 +437,16 @@
         },
         {
             "name": "matecat/dqf-integrator",
-            "version": "v1.0.29",
+            "version": "v1.0.30",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/dqf-integrator.git",
-                "reference": "e0aa6799c4bb9c92e1083335b214f22a37f6a0c7"
+                "reference": "b1ceecf545eb85f101fd96049bf31d9724b2b66d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/e0aa6799c4bb9c92e1083335b214f22a37f6a0c7",
-                "reference": "e0aa6799c4bb9c92e1083335b214f22a37f6a0c7",
+                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/b1ceecf545eb85f101fd96049bf31d9724b2b66d",
+                "reference": "b1ceecf545eb85f101fd96049bf31d9724b2b66d",
                 "shasum": ""
             },
             "require": {
@@ -491,7 +491,7 @@
                 "dqf",
                 "php"
             ],
-            "time": "2019-11-12T15:23:39+00:00"
+            "time": "2019-11-14T10:54:50+00:00"
         },
         {
             "name": "matecat/simple-s3",
@@ -1111,7 +1111,7 @@
         },
         {
             "name": "symfony/console",
-            "version": "v2.8.50",
+            "version": "v2.8.52",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/console.git",
@@ -1229,7 +1229,7 @@
         },
         {
             "name": "symfony/filesystem",
-            "version": "v2.8.50",
+            "version": "v2.8.52",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/filesystem.git",
@@ -2569,7 +2569,7 @@
         },
         {
             "name": "symfony/config",
-            "version": "v2.8.50",
+            "version": "v2.8.52",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/config.git",
@@ -2626,7 +2626,7 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v2.8.50",
+            "version": "v2.8.52",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",

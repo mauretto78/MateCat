@@ -8,6 +8,7 @@
 
 namespace Features\ReviewExtended\Model;
 
+use DataAccess\ShapelessConcreteStruct;
 use DataAccess_AbstractDao;
 use Database;
 
@@ -180,7 +181,7 @@ SQL;
      * @param $segments_id array
      * @param $job_id integer
      *
-     * @return array
+     * @return ShapelessConcreteStruct[]
      */
     public static function getIssuesBySegments( $segments_id, $job_id ) {
 
@@ -269,6 +270,39 @@ JOIN jobs j ON issues.id_job = j.id
 
     }
 
+    /**
+     * @param int $id_segment
+     *
+     * @return ShapelessConcreteStruct[]
+     */
+    public function getReviseIssuesBySegmentTranslation($id_segment){
 
+        $sql = "SELECT
+
+  issues.id as issue_id,
+  qa_categories.label   as issue_category_label,
+  issues.id_category as id_category,
+  issues.severity     as issue_severity
+
+FROM  qa_entries issues
+
+  LEFT JOIN qa_categories
+    ON issues.id_category = qa_categories.id
+
+    WHERE issues.id_segment = :id_segment
+
+  ";
+
+        $conn = Database::obtain()->getConnection();
+        $stmt = $conn->prepare( $sql );
+        $stmt->setFetchMode( \PDO::FETCH_CLASS, '\DataAccess\ShapelessConcreteStruct' );
+
+        $stmt->execute( [
+                'id_segment' => $id_segment
+        ] );
+
+        return $stmt->fetchAll();
+
+    }
 
 }

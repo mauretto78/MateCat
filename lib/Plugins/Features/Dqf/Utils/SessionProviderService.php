@@ -2,7 +2,7 @@
 
 namespace Features\Dqf\Utils;
 
-use Features\Dqf\Utils\Factory\SessionProviderFactory;
+use Features\Dqf\Factory\SessionProviderFactory;
 use Matecat\Dqf\SessionProvider;
 
 class SessionProviderService {
@@ -39,13 +39,6 @@ class SessionProviderService {
 
         if ( false === $sessionProvider->hasGenericEmail( $email ) ) {
             self::createAnonymous( $email );
-        }
-
-        try {
-            $sessionProvider->getByGenericEmail( $email );
-        } catch (\Exception $e){
-            echo $e->getMessage();
-            die();
         }
 
         return $sessionProvider->getByGenericEmail( $email );
