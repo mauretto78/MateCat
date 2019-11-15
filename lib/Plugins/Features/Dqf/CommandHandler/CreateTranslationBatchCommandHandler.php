@@ -138,7 +138,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
                     $targetLang      = $transformedTranslation[ 'targetLang' ];
                     $targetSegment   = $transformedTranslation[ 'targetSegment' ];
                     $editedSegment   = $transformedTranslation[ 'editedSegment' ];
-                    $sourceSegment   = $this->getDqfSourceSegment( $masterProject, $transformedTranslation[ 'sourceSegmentId' ] );
+                    $sourceSegment   = $this->getDqfSourceSegment( $masterProject, $transformedTranslation[ 'sourceSegmentId' ], $transformedTranslation['sourceSegment'] );
 
                     $segmentTranslation = new TranslatedSegment( $mtEngine, $segmentOriginId, $targetLang, $sourceSegment, $targetSegment, $editedSegment );
                     $segmentTranslation->setMatchRate( $transformedTranslation[ 'matchRate' ] );
@@ -206,15 +206,18 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
     /**
      * @param MasterProject $masterProject
      * @param int           $sourceSegmentDqfId
+     * @param string        $segment
      *
      * @return SourceSegment|null
      */
-    private function getDqfSourceSegment( MasterProject $masterProject, $sourceSegmentDqfId ) {
+    private function getDqfSourceSegment( MasterProject $masterProject, $sourceSegmentDqfId, $segment ) {
         $sourceSegments = $masterProject->getSourceSegments();
 
         /** @var SourceSegment $sourceSegment */
         foreach ( $sourceSegments as $sourceSegment ) {
             if ( $sourceSegment->getDqfId() === $sourceSegmentDqfId ) {
+                $sourceSegment->setSegment($segment);
+
                 return $sourceSegment;
             }
         }
