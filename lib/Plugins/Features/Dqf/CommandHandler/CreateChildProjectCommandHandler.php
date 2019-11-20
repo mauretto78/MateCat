@@ -8,9 +8,12 @@ use Features\Dqf\Model\DqfFileTargetLangAssocMapDao;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
+use Features\Dqf\Model\DqfQualityModel;
 use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\FileTargetLang;
+use Matecat\Dqf\Model\Entity\ReviewSettings;
+use Matecat\Dqf\Model\ValueObject\Severity;
 use Matecat\Dqf\Repository\Api\ChildProjectRepository;
 use Matecat\Dqf\Repository\Api\MasterProjectRepository;
 
@@ -56,8 +59,10 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
 
         $this->setUp( $command );
 
+        /** @var ChildProject $childProject */
         $childProject = $this->createProject();
-        $this->assocTargetLang( $childProject );
+
+        $this->assocTargetLang($childProject);
     }
 
     /**
@@ -67,7 +72,7 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
      */
     private function setUp( CreateChildProjectCommand $command ) {
         $this->command = $command;
-        $this->chunk   = \Chunks_ChunkDao::getByJobID( $command->id_job )[ 0 ];
+        $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
         // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
@@ -96,15 +101,19 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
         //
         if ( $this->command->type === Constants::PROJECT_TYPE_TRANSLATION ) {
             $parentProject = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
+            $parentProjectRepo = $this->masterProjectRepository;
         } elseif ( $this->command->type === Constants::PROJECT_TYPE_REVIEW ) {
             $parentProject = end( ( new DqfProjectMapDao() )->getChildByChunk( $this->chunk ) ); // get the last project saved on DQF by chunk
+            $parentProjectRepo = $this->childProjectRepository;
         }
 
-        $dqfParentProject = $this->masterProjectRepository->get( (int)$parentProject->dqf_project_id, $parentProject->dqf_project_uuid );
+        $dqfParentProject = $parentProjectRepo->get( (int)$parentProject->dqf_project_id, $parentProject->dqf_project_uuid );
 
         $childProject = new ChildProject( $this->command->type );
         $childProject->setParentProject( $dqfParentProject );
         $childProject->setClientId( $clientId );
+        $childProject->setIsDummy(false);
+        $this->setReviewSettings($childProject);
 
         $dqfChildProject = $this->childProjectRepository->save( $childProject );
 
@@ -131,6 +140,27 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
         DqfProjectMapDao::insertStructWithAutoIncrements( $struct );
 
         return $dqfChildProject;
+    }
+
+    private function setReviewSettings( ChildProject $childProject ) {
+        $dqfQaModel           = new DqfQualityModel( $this->chunk->getProject() );
+        $reviewSettingsStruct = $dqfQaModel->getReviewSettings();
+
+        $reviewSettings = new ReviewSettings( $reviewSettingsStruct->reviewType );
+        $reviewSettings->setTemplateName( $reviewSettingsStruct->templateName );
+        $reviewSettings->setPassFailThreshold( floatval( $reviewSettingsStruct->passFailThreshold ) );
+        $reviewSettings->setSampling( $reviewSettingsStruct->sampling );
+
+        foreach ( $reviewSettingsStruct->errorCategoryIds as $errorCategoryId ) {
+            $reviewSettings->addErrorCategoryId( $errorCategoryId );
+        }
+
+        $severityWeights = json_decode( $reviewSettingsStruct->severityWeights );
+        foreach ( $severityWeights as $severityWeight ) {
+            $reviewSettings->addSeverityWeight( new Severity( $severityWeight->severityId, $severityWeight->weight ) );
+        }
+
+        $childProject->setReviewSettings( $reviewSettings );
     }
 
     /**

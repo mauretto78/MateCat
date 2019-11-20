@@ -12,27 +12,32 @@ use Files_FileDao;
 use Matecat\Dqf\Cache\BasicAttributes;
 use Translations_SegmentTranslationStruct;
 
-class SegmentTranslationTransformer implements TranslationTransformerInterface {
+class SegmentTransformer implements TransformerInterface {
 
     /**
      * ----------------------------------------------------------
-     * Transform a normal segment translation struct into a array structure ready for DQF
+     * Transform a normal segment translation struct into a array structure suitable for DQF analysis
      * ----------------------------------------------------------
      *
      * The segment translation single update is allowed only if:
      * - the segment translation is in TRANSLATION status
      * - these is already a DQF project including the segment translation
      *
-     * @param Translations_SegmentTranslationStruct $translation
+     * @param \DataAccess_AbstractDaoObjectStruct $struct
      *
      * @return array
      * @throws \Exception
      */
-    public function transform( Translations_SegmentTranslationStruct $translation ) {
+    public function transform( \DataAccess_AbstractDaoObjectStruct $struct ) {
 
-        $segment             = ( new \Segments_SegmentDao() )->getById( $translation->id_segment );
-        $chunk               = $translation->getChunk();
-        $extendedTranslation = $this->getExtendedTranslationForASegment( $segment, $this->getLimitDate( $translation, $chunk ) );
+        if(false === $struct instanceof Translations_SegmentTranslationStruct){
+            throw new \InvalidArgumentException('Provided struct is not a valid instance of ' . Translations_SegmentTranslationStruct::class);
+        }
+
+        /** @var Translations_SegmentTranslationStruct $struct */
+        $segment             = ( new \Segments_SegmentDao() )->getById( $struct->id_segment );
+        $chunk               = $struct->getChunk();
+        $extendedTranslation = $this->getExtendedTranslationForASegment( $segment, $this->getLimitDate( $struct, $chunk ) );
 
         // get $segmentOriginId and $matchRate
         list( $segmentOriginId, $matchRate ) = $this->filterDqfSegmentOriginAndMatchRate( $extendedTranslation, $chunk );

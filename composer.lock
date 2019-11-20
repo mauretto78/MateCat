@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.117.1",
+            "version": "3.119.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "6951cd08326d939f1fd1097a490fccb9751a59d7"
+                "reference": "f9baeb6efe99318956d9924696bd2d51ae5ba338"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/6951cd08326d939f1fd1097a490fccb9751a59d7",
-                "reference": "6951cd08326d939f1fd1097a490fccb9751a59d7",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/f9baeb6efe99318956d9924696bd2d51ae5ba338",
+                "reference": "f9baeb6efe99318956d9924696bd2d51ae5ba338",
                 "shasum": ""
             },
             "require": {
@@ -87,7 +87,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2019-11-14T19:27:06+00:00"
+            "time": "2019-11-19T19:47:09+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -437,16 +437,16 @@
         },
         {
             "name": "matecat/dqf-integrator",
-            "version": "v1.0.31",
+            "version": "v1.0.37",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/dqf-integrator.git",
-                "reference": "4f815910ca40d2968d1980b16b28a1b820d16f8d"
+                "reference": "0c10770d521af6d98ee793caa54c84179b496fd9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/4f815910ca40d2968d1980b16b28a1b820d16f8d",
-                "reference": "4f815910ca40d2968d1980b16b28a1b820d16f8d",
+                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/0c10770d521af6d98ee793caa54c84179b496fd9",
+                "reference": "0c10770d521af6d98ee793caa54c84179b496fd9",
                 "shasum": ""
             },
             "require": {
@@ -491,7 +491,7 @@
                 "dqf",
                 "php"
             ],
-            "time": "2019-11-15T13:31:29+00:00"
+            "time": "2019-11-20T09:59:06+00:00"
         },
         {
             "name": "matecat/simple-s3",
@@ -1496,16 +1496,16 @@
         },
         {
             "name": "onelogin/php-saml",
-            "version": "2.17.1",
+            "version": "2.18.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/onelogin/php-saml.git",
-                "reference": "aa7e0f24cf287d44f618f7634b8464a3b4645472"
+                "reference": "a1864313eb4e886bc26a77375ce204fad7027450"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/onelogin/php-saml/zipball/aa7e0f24cf287d44f618f7634b8464a3b4645472",
-                "reference": "aa7e0f24cf287d44f618f7634b8464a3b4645472",
+                "url": "https://api.github.com/repos/onelogin/php-saml/zipball/a1864313eb4e886bc26a77375ce204fad7027450",
+                "reference": "a1864313eb4e886bc26a77375ce204fad7027450",
                 "shasum": ""
             },
             "require": {
@@ -1545,7 +1545,7 @@
                 "onelogin",
                 "saml"
             ],
-            "time": "2019-11-06T16:32:50+00:00"
+            "time": "2019-11-19T16:03:59+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",

@@ -47,18 +47,19 @@ class QualityReportDao extends DataAccess_AbstractDao {
         WHERE show_in_cattool
 SQL;
 
-        $conn  = Database::obtain()->getConnection();
+        $conn = Database::obtain()->getConnection();
         $stmt = $conn->prepare( $sql );
         $stmt->setFetchMode( \PDO::FETCH_ASSOC );
 
-        $stmt->execute( array(
-            'id_job'   => $chunk->id,
-            'password' => $chunk->password
-        ) );
+        $stmt->execute( [
+                'id_job'   => $chunk->id,
+                'password' => $chunk->password
+        ] );
 
         return $stmt->fetch();
 
     }
+
     /**
      * @param \Chunks_ChunkStruct $chunk
      *
@@ -162,16 +163,16 @@ ORDER BY f.id, s.id, issues.id, comments.id
 
 SQL;
 
-        $conn  = Database::obtain()->getConnection();
+        $conn = Database::obtain()->getConnection();
         $stmt = $conn->prepare( $sql );
         $stmt->setFetchMode( \PDO::FETCH_ASSOC );
 
-        $stmt->execute( array(
+        $stmt->execute( [
                 'approved' => \Constants_TranslationStatus::STATUS_APPROVED,
                 'rejected' => \Constants_TranslationStatus::STATUS_REJECTED,
                 'id_job'   => $chunk->id,
                 'password' => $chunk->password
-        ) );
+        ] );
 
         return $stmt->fetchAll();
 
@@ -179,13 +180,13 @@ SQL;
 
     /**
      * @param $segments_id array
-     * @param $job_id integer
+     * @param $job_id      integer
      *
      * @return ShapelessConcreteStruct[]
      */
     public static function getIssuesBySegments( $segments_id, $job_id ) {
 
-        $prepare_str_segments_id = str_repeat( 'UNION SELECT ? ', count( $segments_id ) - 1);
+        $prepare_str_segments_id = str_repeat( 'UNION SELECT ? ', count( $segments_id ) - 1 );
 
         $sql = "SELECT
 
@@ -215,7 +216,7 @@ FROM  qa_entries issues
 
 JOIN (
 		SELECT ? as id_segment
-		".$prepare_str_segments_id."
+		" . $prepare_str_segments_id . "
 ) AS SLIST USING( id_segment )
 
   LEFT JOIN qa_categories
@@ -232,12 +233,12 @@ JOIN (
         $stmt = $conn->prepare( $sql );
         $stmt->setFetchMode( \PDO::FETCH_CLASS, '\DataAccess\ShapelessConcreteStruct' );
 
-        $stmt->execute( array_merge($segments_id, array($job_id)) );
+        $stmt->execute( array_merge( $segments_id, [ $job_id ] ) );
 
         return $stmt->fetchAll();
     }
 
-    public function getReviseIssuesByChunk($job_id, $password){
+    public function getReviseIssuesByChunk( $job_id, $password ) {
 
         $sql = "SELECT
 
@@ -264,7 +265,7 @@ JOIN jobs j ON issues.id_job = j.id
         $stmt = $conn->prepare( $sql );
         $stmt->setFetchMode( \PDO::FETCH_CLASS, '\DataAccess\ShapelessConcreteStruct' );
 
-        $stmt->execute( array($job_id, $password) );
+        $stmt->execute( [ $job_id, $password ] );
 
         return $stmt->fetchAll();
 
@@ -275,19 +276,23 @@ JOIN jobs j ON issues.id_job = j.id
      *
      * @return ShapelessConcreteStruct[]
      */
-    public function getReviseIssuesBySegmentTranslation($id_segment){
+    public function getReviseIssuesBySegmentTranslation( $id_segment ) {
 
         $sql = "SELECT
 
-  issues.id as issue_id,
-  qa_categories.label   as issue_category_label,
-  issues.id_category as id_category,
-  issues.severity     as issue_severity
+  issues.id                 as issue_id,
+  qa_categories.label       as issue_category_label,
+  issues.id_category        as id_category,
+  issues.severity           as issue_severity,
+  qa_entry_comments.comment as comment
 
 FROM  qa_entries issues
 
   LEFT JOIN qa_categories
     ON issues.id_category = qa_categories.id
+    
+  LEFT JOIN qa_entry_comments
+    ON issues.id = qa_entry_comments.id_qa_entry  
 
     WHERE issues.id_segment = :id_segment
 

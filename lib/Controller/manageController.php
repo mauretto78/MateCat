@@ -8,6 +8,8 @@ use Features\Dqf\CommandHandler\CreateMasterProjectCommandHandler;
 use Features\Dqf\CommandHandler\CreateChildProjectCommandHandler;
 use Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler;
 use Features\Dqf\Command\CreateTranslationBatchCommand;
+use Features\Dqf\Command\CreateReviewCommand;
+use Features\Dqf\CommandHandler\CreateReviewCommandHandler;
 
 class manageController extends viewController {
 
@@ -45,7 +47,8 @@ class manageController extends viewController {
 
             // 2. Create Child Project translation
             $command = new CreateChildProjectCommand([
-                    'id_job' => 2,
+                    'job_id' => 2,
+                    'job_password' =>'aa28a6501983',
                     'type' => 'translation',
 
             ]);
@@ -53,28 +56,31 @@ class manageController extends viewController {
 
             // 3. Update translation batch
             $command = new CreateTranslationBatchCommand([
-                    'id_job' => 2,
+                    'job_id' => 2,
+                    'job_password' =>'aa28a6501983',
             ]);
             (new CreateTranslationBatchCommandHandler())->handle($command);
 
             // 4. Create Child Project review
+            $command = new CreateChildProjectCommand([
+                    'job_id' => 2,
+                    'job_password' =>'aa28a6501983',
+                    'type' => 'review',
 
+            ]);
+            (new CreateChildProjectCommandHandler())->handle($command);
 
             // 5. Update reviews
+            $command = new CreateReviewCommand([
+                    'job_id' => 2,
+                    'job_password' =>'aa28a6501983',
+            ]);
+
+            (new CreateReviewCommandHandler())->handle($command);
 
         } catch (\Exception $exception){
             echo $exception->getMessage();
         }
-
-
-
-
-//        $command = new CreateTranslationBatchCommand([
-//                'id_job' => 6,
-//                'id_file' => 6,
-//        ]);
-//
-//        (new \Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler())->handle($command);
 
         var_dump('OK');
         die();

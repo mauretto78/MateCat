@@ -112,9 +112,14 @@ class DqfSegmentsDao extends DataAccess_AbstractDao {
      *
      * @throws \Exception
      */
-    public function insertInATransaction( array $values ) {
-        $sql = " INSERT INTO dqf_segments (id_segment, dqf_segment_id, dqf_translation_id, dqf_parent_project_id) VALUES ( ?, ?, ?, ? )  
-                ON DUPLICATE KEY UPDATE dqf_segments.dqf_translation_id = VALUES(dqf_segments.dqf_translation_id) ";
+    public function insertOrUpdateInATransaction( array $values ) {
+        $sql = " INSERT INTO dqf_segments (id_segment, dqf_segment_id, dqf_translation_id, dqf_parent_project_id) 
+                VALUES ( ?, ?, ?, ? )  
+                ON DUPLICATE 
+                KEY UPDATE 
+                dqf_segments.dqf_translation_id = VALUES(dqf_segments.dqf_translation_id),
+                dqf_segments.dqf_parent_project_id = VALUES(dqf_segments.dqf_parent_project_id) 
+                 ";
 
         $conn = $this->getDatabaseHandler()->getConnection();
 

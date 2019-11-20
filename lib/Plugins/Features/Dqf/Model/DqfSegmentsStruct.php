@@ -14,4 +14,5 @@ class DqfSegmentsStruct extends DataAccess_AbstractDaoSilentStruct {
     public $id_segment ;
     public $dqf_segment_id ;
     public $dqf_translation_id ;
+    public $dqf_parent_project_id ;
 }

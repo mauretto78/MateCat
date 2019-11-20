@@ -10,7 +10,7 @@ use Features\Dqf\Model\DqfFileMapDao;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfSegmentsDao;
-use Features\Dqf\Transformer\SegmentTranslationTransformer;
+use Features\Dqf\Transformer\SegmentTransformer;
 use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
@@ -83,7 +83,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
      */
     private function setUp( CreateTranslationBatchCommand $command ) {
         $this->command = $command;
-        $this->chunk   = \Chunks_ChunkDao::getByJobID( $command->id_job )[ 0 ];
+        $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
         // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
@@ -111,13 +111,13 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
         $masterProject  = $this->getDqfMasterProject();
         $childProject   = $this->getDqfChildProject( $masterProject );
         $dqfFileMapDao  = new DqfFileMapDao();
-        $transformer    = new SegmentTranslationTransformer();
+        $transformer    = new SegmentTransformer();
         $dqfSegmentsDao = new DqfSegmentsDao();
 
         foreach ( $this->chunk->getFiles() as $file ) {
 
             // get the DqfId of file
-            $dqfFileMapStruct = $dqfFileMapDao->findOne( $file->id, $this->command->id_job );
+            $dqfFileMapStruct = $dqfFileMapDao->findOne( $file->id, $this->command->job_id );
             $dqfFile          = $this->getDqfFile( $childProject, $dqfFileMapStruct->dqf_id );
 
             // init translationBatch
@@ -128,7 +128,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
             foreach ( $translatedSegmentTranslations as $translation ) {
 
                 // if the segment is NOT a new or draft
-                if( $translation->status !== Constants_TranslationStatus::STATUS_NEW and $translation->status !== Constants_TranslationStatus::STATUS_DRAFT ){
+                if ( $translation->status !== Constants_TranslationStatus::STATUS_NEW and $translation->status !== Constants_TranslationStatus::STATUS_DRAFT ) {
 
                     // transform $translation into an array containing all infos needed for DQF
                     $transformedTranslation = $transformer->transform( $translation );
@@ -138,7 +138,7 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
                     $targetLang      = $transformedTranslation[ 'targetLang' ];
                     $targetSegment   = $transformedTranslation[ 'targetSegment' ];
                     $editedSegment   = $transformedTranslation[ 'editedSegment' ];
-                    $sourceSegment   = $this->getDqfSourceSegment( $masterProject, $transformedTranslation[ 'sourceSegmentId' ], $transformedTranslation['sourceSegment'] );
+                    $sourceSegment   = $this->getDqfSourceSegment( $childProject, $dqfFile, $transformedTranslation[ 'sourceSegmentId' ], $transformedTranslation[ 'sourceSegment' ] );
 
                     $segmentTranslation = new TranslatedSegment( $mtEngine, $segmentOriginId, $targetLang, $sourceSegment, $targetSegment, $editedSegment );
                     $segmentTranslation->setMatchRate( $transformedTranslation[ 'matchRate' ] );
@@ -149,20 +149,22 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
                 }
             }
 
-            /** @var TranslationBatch $translationBatch */
-            $translationBatch = $this->translationRepository->save( $translationBatch );
+            /** @var TranslationBatch $savedTranslationBatch */
+            $savedTranslationBatch = $this->translationRepository->save( $translationBatch );
 
             // save segment translations reference in a transaction
             $segmentReferences = [];
 
-            foreach ( $translationBatch->getSegments() as $index => $segment ) {
-                $segmentReferences[] = (int)$this->chunk->getTranslations()[ $index ]->id_segment;
-                $segmentReferences[] = (int)$segment->getSourceSegment()->getDqfId();
-                $segmentReferences[] = (int)$segment->getDqfId();
-                $segmentReferences[] = (int)$childProject->getDqfId();
+            foreach ( $savedTranslationBatch->getSegments() as $index => $segment ) {
+                $segmentReferences[] = [
+                        (int)$this->chunk->getTranslations()[ $index ]->id_segment,
+                        (int)$segment->getSourceSegment()->getDqfId(),
+                        (int)$segment->getDqfId(),
+                        (int)$childProject->getDqfId(),
+                ];
             }
 
-            $dqfSegmentsDao->insertInATransaction( $segmentReferences );
+            $dqfSegmentsDao->insertOrUpdateInATransaction( $segmentReferences );
         }
     }
 
@@ -204,19 +206,19 @@ class CreateTranslationBatchCommandHandler extends AbstractCommandHanlder {
     }
 
     /**
-     * @param MasterProject $masterProject
-     * @param int           $sourceSegmentDqfId
-     * @param string        $segment
+     * @param ChildProject $childProject
+     * @param File         $file
+     * @param              $sourceSegmentDqfId
+     * @param              $segment
      *
-     * @return SourceSegment|null
+     * @return SourceSegment
      */
-    private function getDqfSourceSegment( MasterProject $masterProject, $sourceSegmentDqfId, $segment ) {
-        $sourceSegments = $masterProject->getSourceSegments();
+    private function getDqfSourceSegment( ChildProject $childProject, File $file, $sourceSegmentDqfId, $segment ) {
+        $sourceSegments = $childProject->getSourceSegmentsForAFile( $file );
 
-        /** @var SourceSegment $sourceSegment */
         foreach ( $sourceSegments as $sourceSegment ) {
-            if ( $sourceSegment->getDqfId() === $sourceSegmentDqfId ) {
-                $sourceSegment->setSegment($segment);
+            if ( $sourceSegment->getDqfId() === (int)$sourceSegmentDqfId ) {
+                $sourceSegment->setSegment( $segment );
 
                 return $sourceSegment;
             }

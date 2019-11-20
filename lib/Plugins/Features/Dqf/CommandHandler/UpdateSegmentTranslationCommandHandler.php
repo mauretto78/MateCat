@@ -9,7 +9,7 @@ use Features\Dqf\Model\DqfFileMapDao;
 use Features\Dqf\Model\DqfFileMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
-use Features\Dqf\Transformer\SegmentTranslationTransformer;
+use Features\Dqf\Transformer\SegmentTransformer;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
 use Matecat\Dqf\Model\Entity\MasterProject;
@@ -84,7 +84,7 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
      */
     private function setUp( UpdateSegmentTranslationCommand $command ) {
         $this->command = $command;
-        $this->chunk   = \Chunks_ChunkDao::getByJobID( $command->id_job )[ 0 ];
+        $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
         // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
@@ -100,7 +100,7 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
 
         // get the DqfId of file
         $dqfFileMapDao          = new DqfFileMapDao();
-        $this->dqfFileMapStruct = $dqfFileMapDao->findOne( $command->id_file, $command->id_job );
+        $this->dqfFileMapStruct = $dqfFileMapDao->findOne( $command->id_file, $command->job_id );
 
         $this->masterProjectRepository = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
         $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
@@ -164,8 +164,8 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
      */
     private function getTranslatedSegment( MasterProject $masterProject ) {
         // get the segment translation
-        $segmentTranslation = \Translations_SegmentTranslationDao::findBySegmentAndJob( $this->command->id_segment, $this->command->id_job );
-        $transformer        = new SegmentTranslationTransformer();
+        $segmentTranslation = \Translations_SegmentTranslationDao::findBySegmentAndJob( $this->command->id_segment, $this->command->job_id );
+        $transformer        = new SegmentTransformer();
 
         $transformedTranslation = $transformer->transform( $segmentTranslation );
 

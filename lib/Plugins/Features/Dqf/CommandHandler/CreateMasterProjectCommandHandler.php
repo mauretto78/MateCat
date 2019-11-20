@@ -11,6 +11,7 @@ use Features\Dqf\Model\DqfFileTargetLangAssocMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfQualityModel;
+use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Utils\ProjectMetadata;
 use Matecat\Dqf\Model\Entity\File;
 use Matecat\Dqf\Model\Entity\FileTargetLang;
@@ -198,10 +199,15 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
 
     /**
      * @param MasterProject $masterProject
+     *
+     * @throws \Exception
      */
     private function submitSourceSegments( MasterProject $masterProject ) {
 
         $files = \Files_FileDao::getByProjectId( $this->project->id );
+
+        // array map needed to persist source segments on DB after sending them to DQF
+        $arrayMapOfIds = [];
 
         foreach ( $files as $index => $file ) {
             $segments     = ( new \Segments_SegmentDao() )->getByFileId( $file->id );
@@ -215,14 +221,58 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
                         $segment->segment
                 ) );
 
+                $arrayMapOfIds[ $file->filename ][] = [
+                        $segment->id,
+                        $global_index
+                ];
+
                 $global_index++;
             }
         }
 
         $this->repo->update( $masterProject );
+
+        $this->writeSourceSegments( $masterProject, $arrayMapOfIds );
     }
 
-    protected function saveCompletion() {
+    /**
+     * save project_completion metadata
+     */
+    private function saveCompletion() {
         $this->project->setMetadata( 'dqf_master_project_creation_completed_at', time() );
+    }
+
+    /**
+     * @param MasterProject $masterProject
+     * @param array         $arrayMapOfIds
+     *
+     * @throws \Exception
+     */
+    private function writeSourceSegments( MasterProject $masterProject, $arrayMapOfIds = [] ) {
+
+        $values = [];
+
+        foreach ( $masterProject->getSourceSegments() as $file => $filesSourceSegments ) {
+
+            /** @var SourceSegment $sourceSegment */
+            foreach ( $filesSourceSegments as $i => $sourceSegment ) {
+
+                $matecatId = $arrayMapOfIds[ $file ][ $i ][ 0 ];
+                $index     = $arrayMapOfIds[ $file ][ $i ][ 1 ];
+
+                if ( $sourceSegment->getIndex() === $index ) {
+                    // id_segment, dqf_segment_id, dqf_translation_id, dqf_parent_project_id
+                    $values[] = [
+                            $matecatId,
+                            $sourceSegment->getDqfId(),
+                            null,
+                            $masterProject->getDqfId()
+                    ];
+                }
+            }
+        }
+
+        $dqfSegmentsDao = new DqfSegmentsDao();
+        $dqfSegmentsDao->insertOrUpdateInATransaction($values);
     }
 }

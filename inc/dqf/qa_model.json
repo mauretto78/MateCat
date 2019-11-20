@@ -28,22 +28,22 @@
 
     "severities": [
       {
-        "label": "neutral",
+        "label": "Neutral",
         "dqf_id" : 1,
         "penalty": 1
       },
       {
-        "label": "minor",
+        "label": "Minor",
         "dqf_id" : 2,
         "penalty": 2
       },
       {
-        "label": "major",
+        "label": "Major",
         "dqf_id" : 3,
         "penalty": 3
       },
       {
-        "label": "critical",
+        "label": "Critical",
         "dqf_id" : 4,
         "penalty": 4
       }
