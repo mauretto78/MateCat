@@ -25,20 +25,6 @@ class GenericController extends AbstractStatefulKleinController {
         $this->response->code( 200 );
     }
 
-    /**
-     * @throws \API\V2\Exceptions\AuthenticationError
-     * @throws \Exception
-     */
-    public function clearCredentials() {
-        $userId = $this->getUser()->getUid();
-
-        $sessionProvider = SessionProviderFactory::create();
-        $sessionProvider->destroy($userId);
-        UserMetadata::clearCredentials($userId);
-
-        $this->response->code( 200 );
-    }
-
     public function revokeAssignment() {
         if ( !in_array( $this->request->page, [ 'translate', 'revise' ] ) ) {
             throw new NotFoundException();

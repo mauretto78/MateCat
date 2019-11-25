@@ -4,6 +4,7 @@ namespace Features\Dqf\CommandHandler;
 
 use Features\Dqf\Command\CreateChildProjectCommand;
 use Features\Dqf\Factory\ClientFactory;
+use Features\Dqf\Model\DqfFileMapDao;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapDao;
 use Features\Dqf\Model\DqfFileTargetLangAssocMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
@@ -11,23 +12,18 @@ use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfQualityModel;
 use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
+use Matecat\Dqf\Model\Entity\File;
 use Matecat\Dqf\Model\Entity\FileTargetLang;
 use Matecat\Dqf\Model\Entity\ReviewSettings;
 use Matecat\Dqf\Model\ValueObject\Severity;
 use Matecat\Dqf\Repository\Api\ChildProjectRepository;
-use Matecat\Dqf\Repository\Api\MasterProjectRepository;
 
-class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
+class CreateChildProjectCommandHandler extends AbstractCommandHandler {
 
     /**
      * @var ChildProjectRepository
      */
     private $childProjectRepository;
-
-    /**
-     * @var MasterProjectRepository
-     */
-    private $masterProjectRepository;
 
     /**
      * @var CreateChildProjectCommand
@@ -62,7 +58,7 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
         /** @var ChildProject $childProject */
         $childProject = $this->createProject();
 
-        $this->assocTargetLang($childProject);
+        $this->assocTargetLang( $childProject );
     }
 
     /**
@@ -74,14 +70,10 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
         $this->command = $command;
         $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
-        // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
-        // THIS MUST BE CHANGED
-
+        $uid          = $this->getTranslatorUid( $command->job_id, $command->job_password );
         $sessionId    = $this->getSessionId( $uid );
         $genericEmail = $this->getGenericEmail( $uid );
 
-        $this->masterProjectRepository = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
         $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
 
@@ -100,26 +92,19 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
         // otherwise, if the project is a 'revision', set the 'translation'
         //
         if ( $this->command->type === Constants::PROJECT_TYPE_TRANSLATION ) {
-            $parentProject = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
-            $parentProjectRepo = $this->masterProjectRepository;
+            $parentProject     = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
         } elseif ( $this->command->type === Constants::PROJECT_TYPE_REVIEW ) {
-            $parentProject = end( ( new DqfProjectMapDao() )->getChildByChunk( $this->chunk ) ); // get the last project saved on DQF by chunk
-            $parentProjectRepo = $this->childProjectRepository;
+            $parentProject     = end( ( new DqfProjectMapDao() )->getChildByChunk( $this->chunk ) ); // get the last project saved on DQF by chunk
         }
 
-        $dqfParentProject = $parentProjectRepo->get( (int)$parentProject->dqf_project_id, $parentProject->dqf_project_uuid );
-
         $childProject = new ChildProject( $this->command->type );
-        $childProject->setParentProject( $dqfParentProject );
+        $childProject->setParentProjectUuid( $parentProject->dqf_project_uuid );
         $childProject->setClientId( $clientId );
-        $childProject->setIsDummy(false);
-        $this->setReviewSettings($childProject);
+        $childProject->setIsDummy( false );
+        $this->setReviewSettings( $childProject );
 
         $dqfChildProject = $this->childProjectRepository->save( $childProject );
-
-        // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
-        // THIS MUST BE CHANGED
+        $uid = $this->getTranslatorUid($this->command->job_id, $this->command->job_password);
 
         $struct = new DqfProjectMapStruct( [
                 'id'               => $id_project,
@@ -130,8 +115,8 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
                 'dqf_client_id'    => $clientId,
                 'dqf_project_id'   => $dqfChildProject->getDqfId(),
                 'dqf_project_uuid' => $dqfChildProject->getDqfUuid(),
-                'dqf_parent_id'    => $dqfParentProject->getDqfId(),
-                'dqf_parent_uuid'  => $dqfParentProject->getDqfUuid(),
+                'dqf_parent_id'    => $parentProject->dqf_project_id,
+                'dqf_parent_uuid'  => $parentProject->dqf_project_uuid,
                 'create_date'      => \Utils::mysqlTimestamp( time() ),
                 'project_type'     => $this->command->type,
                 'uid'              => $uid
@@ -172,13 +157,12 @@ class CreateChildProjectCommandHandler extends AbstractCommandHanlder {
 
         $i = null;
 
-        foreach ( $this->chunk->getFiles() as $file ) {
-            foreach ( $childProject->getParentProject()->getFiles() as $index => $dqfFile ) {
-                if ( $dqfFile->getName() === $file->filename ) {
-                    $childProject->assocTargetLanguageToFile( $this->chunk->target, $dqfFile );
-                    $i = $index; // return the position in assocTargetLanguageToFile, it's needed later to be passed to getTargetLanguageAssoc method
-                }
-            }
+        foreach ( $this->chunk->getFiles() as $index => $file ) {
+            $dqfFileMap = (new DqfFileMapDao())->findOne( $file->id, $this->chunk->id );
+            $dqfFile = new File( $file->filename, $file->getSegmentsCount() );
+            $dqfFile->setDqfId((int)$dqfFileMap->dqf_id);
+            $childProject->assocTargetLanguageToFile( $this->chunk->target, $dqfFile );
+            $i = $index;
         }
 
         $this->childProjectRepository->update( $childProject );

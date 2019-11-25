@@ -22,7 +22,7 @@ class DqfSegmentsDao extends DataAccess_AbstractDao {
     /**
      * @param $id_segment
      *
-     * @return mixed
+     * @return DqfSegmentsStruct
      */
     public function getByIdSegment( $id_segment ) {
         $sql = "SELECT * FROM dqf_segments WHERE id_segment = ?";

@@ -7,9 +7,11 @@ use Features\Dqf\Command\CreateChildProjectCommand;
 use Features\Dqf\CommandHandler\CreateMasterProjectCommandHandler;
 use Features\Dqf\CommandHandler\CreateChildProjectCommandHandler;
 use Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler;
+use Features\Dqf\CommandHandler\UpdateSegmentTranslationCommandHandler;
 use Features\Dqf\Command\CreateTranslationBatchCommand;
 use Features\Dqf\Command\CreateReviewCommand;
 use Features\Dqf\CommandHandler\CreateReviewCommandHandler;
+use Features\Dqf\Command\UpdateSegmentTranslationCommand;
 
 class manageController extends viewController {
 
@@ -41,41 +43,45 @@ class manageController extends viewController {
                             2 => 4
                     ],
             ]);
-
             (new CreateMasterProjectCommandHandler())->handle($command);
-
 
             // 2. Create Child Project translation
             $command = new CreateChildProjectCommand([
                     'job_id' => 2,
                     'job_password' =>'aa28a6501983',
                     'type' => 'translation',
-
             ]);
             (new CreateChildProjectCommandHandler())->handle($command);
 
             // 3. Update translation batch
             $command = new CreateTranslationBatchCommand([
                     'job_id' => 2,
-                    'job_password' =>'aa28a6501983',
+                    'job_password' => 'aa28a6501983',
             ]);
             (new CreateTranslationBatchCommandHandler())->handle($command);
 
-            // 4. Create Child Project review
+            // 4. Update a single translation
+            $command = new UpdateSegmentTranslationCommand([
+                'job_id' => 2,
+                'job_password' => 'aa28a6501983',
+                'id_file' => 2,
+                'id_segment' => 6,
+            ]);
+            (new UpdateSegmentTranslationCommandHandler())->handle($command);
+
+            // 5. Create Child Project review
             $command = new CreateChildProjectCommand([
                     'job_id' => 2,
                     'job_password' =>'aa28a6501983',
                     'type' => 'review',
-
             ]);
             (new CreateChildProjectCommandHandler())->handle($command);
 
-            // 5. Update reviews
+            // 6. Update reviews
             $command = new CreateReviewCommand([
                     'job_id' => 2,
                     'job_password' =>'aa28a6501983',
             ]);
-
             (new CreateReviewCommandHandler())->handle($command);
 
         } catch (\Exception $exception){

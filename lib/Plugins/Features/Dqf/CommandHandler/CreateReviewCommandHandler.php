@@ -28,7 +28,7 @@ use Matecat\Dqf\Repository\Api\ReviewRepository;
 use Matecat\Dqf\Repository\Api\TranslationRepository;
 use Matecat\Dqf\Utils\RevisionCorrectionAnalyser;
 
-class CreateReviewCommandHandler extends AbstractCommandHanlder {
+class CreateReviewCommandHandler extends AbstractCommandHandler {
 
     /**
      * @var CreateReviewCommand
@@ -94,10 +94,7 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
         $this->command = $command;
         $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
-        // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
-        // THIS MUST BE CHANGED
-
+        $uid          = $this->getTranslatorUid( $command->job_id, $command->job_password );
         $sessionId    = $this->getSessionId( $uid );
         $genericEmail = $this->getGenericEmail( $uid );
 
@@ -119,8 +116,7 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
      * @throws \Exception
      */
     private function submitBatch() {
-        $parentProject      = $this->getDqfParentProject();
-        $childReview        = $this->getDqfChildProject( $parentProject );
+        $childReview        = $this->getDqfChildProject();
         $dqfFileMapDao      = new DqfFileMapDao();
         $segmentTransformer = new SegmentTransformer();
         $reviewTransformer  = new ReviewTransformer();
@@ -147,11 +143,12 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
                     $transformedTranslation = $segmentTransformer->transform( $translation );
 
                     // get dqf id of segment and translation
-                    $dqfSegmentsStruct = $dqfSegmentsDao->getByIdSegmentAndDqfProjectId( (int)$segmentId, $parentProject->getDqfId() );
+                    $dqfSegmentsStruct = $dqfSegmentsDao->getByIdSegmentAndDqfProjectId( (int)$segmentId, (int)$this->dqfProjectMapStruct->dqf_parent_id   );
 
                     // get the TranslatedSegment from DQF
                     $translatedSegment = $this->translationRepository->getTranslatedSegment(
-                            $parentProject,
+                            (int)$this->dqfProjectMapStruct->dqf_parent_id,
+                            $this->dqfProjectMapStruct->dqf_parent_uuid,
                             (int)$dqfFileMapStruct->dqf_id, $this->chunk->target,
                             (int)$dqfSegmentsStruct->dqf_segment_id,
                             (int)$dqfSegmentsStruct->dqf_translation_id
@@ -202,28 +199,18 @@ class CreateReviewCommandHandler extends AbstractCommandHanlder {
     }
 
     /**
-     * @return ChildProject
-     */
-    private function getDqfParentProject() {
-        $dqfId   = (int)$this->dqfProjectMapStruct->dqf_parent_id;
-        $dqfUuid = $this->dqfProjectMapStruct->dqf_parent_uuid;
-
-        return $this->childProjectRepository->get( $dqfId, $dqfUuid );
-    }
-
-    /**
      * @param ChildProject $parentProject
      *
      * @return mixed
      */
-    private function getDqfChildProject( ChildProject $parentProject ) {
+    private function getDqfChildProject(  ) {
 
         // get DqfId and DqfUuid
         $dqfId   = (int)$this->dqfProjectMapStruct->dqf_project_id;
         $dqfUuid = $this->dqfProjectMapStruct->dqf_project_uuid;
 
         $childProject = $this->childProjectRepository->get( $dqfId, $dqfUuid );
-        $childProject->setParentProject( $parentProject );
+        $childProject->setParentProjectUuid( $this->dqfProjectMapStruct->dqf_parent_uuid );
 
         return $childProject;
     }

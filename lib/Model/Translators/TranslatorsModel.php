@@ -226,6 +226,46 @@ class TranslatorsModel {
 
     }
 
+    /**
+     * This function is used exclusively by DQF plugin to connect a translator to a job
+     *
+     * @throws \Exception
+     */
+    public function saveJob() {
+
+        $translatorStruct = new JobsTranslatorsStruct();
+
+        $translatorUser = ( new \Users_UserDao() )->getByEmail( $this->email );
+        if ( !empty( $translatorUser ) ) {
+            $translatorStruct->id_translator_profile = $this->saveProfile( $translatorUser );
+        }
+
+        $translatorStruct->id_job             = $this->jStruct->id;
+        $translatorStruct->job_password       = $this->jStruct->password;
+        $translatorStruct->delivery_date      = Utils::mysqlTimestamp( $this->delivery_date );
+        $translatorStruct->job_owner_timezone = $this->job_owner_timezone;
+        $translatorStruct->added_by           = $this->callingUser->uid;
+        $translatorStruct->email              = $this->email;
+        $translatorStruct->source             = $this->jStruct[ 'source' ];
+        $translatorStruct->target             = $this->jStruct[ 'target' ];
+
+        $jTranslatorsDao = new JobsTranslatorsDao();
+        $jTranslatorsDao->insertStruct( $translatorStruct, [
+                'no_nulls'            => true,
+                'on_duplicate_update' => [
+                        'delivery_date'      => 'value',
+                        'job_password'       => 'value',
+                        'job_owner_timezone' => 'value'
+                ]
+        ] );
+
+        //Update internal variable
+        $this->jobTranslator = $translatorStruct;
+
+        //clean cache JobsTranslatorsDao to update the delivery_date in next query
+        $jTranslatorsDao->destroyCacheByJobStruct( $this->jStruct );
+    }
+
     protected function saveProfile( Users_UserStruct $existentUser ) {
 
         //associate the translator with an existent user and create a profile

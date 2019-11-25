@@ -21,7 +21,7 @@ use Matecat\Dqf\Model\Entity\SourceSegment;
 use Matecat\Dqf\Model\ValueObject\Severity;
 use Matecat\Dqf\Repository\Api\MasterProjectRepository;
 
-class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
+class CreateMasterProjectCommandHandler extends AbstractCommandHandler {
 
     /**
      * @var \Projects_ProjectStruct
@@ -260,7 +260,7 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHanlder {
                 $matecatId = $arrayMapOfIds[ $file ][ $i ][ 0 ];
                 $index     = $arrayMapOfIds[ $file ][ $i ][ 1 ];
 
-                if ( $sourceSegment->getIndex() === $index ) {
+                if ( $sourceSegment->getIndexNo() === $index ) {
                     // id_segment, dqf_segment_id, dqf_translation_id, dqf_parent_project_id
                     $values[] = [
                             $matecatId,

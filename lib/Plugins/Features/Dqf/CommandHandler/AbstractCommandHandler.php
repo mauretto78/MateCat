@@ -5,8 +5,9 @@ namespace Features\Dqf\CommandHandler;
 use Features\Dqf\Factory\UserRepositoryFactory;
 use Features\Dqf\Utils\SessionProviderService;
 use Matecat\Dqf\Utils\DataEncryptor;
+use Translators\JobsTranslatorsDao;
 
-abstract class AbstractCommandHanlder implements CommandHandlerInterface {
+abstract class AbstractCommandHandler implements CommandHandlerInterface {
 
     /**
      * @param $externalId
@@ -47,5 +48,18 @@ abstract class AbstractCommandHanlder implements CommandHandlerInterface {
         $dataEncryptor = new DataEncryptor(\INIT::$DQF_ENCRYPTION_KEY, \INIT::$DQF_ENCRYPTION_IV);
 
         return ( $dqfUser->isGeneric() ) ? $dataEncryptor->decrypt($dqfUser->getGenericEmail()) : null;
+    }
+
+    /**
+     * @param int $job_id
+     * @param string $job_password
+     *
+     * @return int
+     */
+    protected function getTranslatorUid( $job_id, $job_password) {
+        $jobsTranslatorsDao = new JobsTranslatorsDao();
+        $translatorPfoile = $jobsTranslatorsDao->findUserIdByJobIdAndPassword($job_id, $job_password);
+
+        return (int)$translatorPfoile['uid_translator'];
     }
 }

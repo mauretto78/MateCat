@@ -2,25 +2,23 @@
 
 namespace Features\Dqf\CommandHandler;
 
-use Features\Dqf\Command\CommandInterface;
 use Features\Dqf\Command\UpdateSegmentTranslationCommand;
 use Features\Dqf\Factory\ClientFactory;
 use Features\Dqf\Model\DqfFileMapDao;
 use Features\Dqf\Model\DqfFileMapStruct;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
+use Features\Dqf\Model\DqfSegmentsDao;
+use Features\Dqf\Model\DqfSegmentsStruct;
 use Features\Dqf\Transformer\SegmentTransformer;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
-use Matecat\Dqf\Model\Entity\MasterProject;
-use Matecat\Dqf\Model\Entity\SourceSegment;
 use Matecat\Dqf\Model\Entity\TranslatedSegment;
 use Matecat\Dqf\Repository\Api\ChildProjectRepository;
 use Matecat\Dqf\Repository\Api\FilesRepository;
-use Matecat\Dqf\Repository\Api\MasterProjectRepository;
 use Matecat\Dqf\Repository\Api\TranslationRepository;
 
-class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
+class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandHandler {
 
     /**
      * @var UpdateSegmentTranslationCommand
@@ -31,11 +29,6 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
      * @var \Chunks_ChunkStruct
      */
     private $chunk;
-
-    /**
-     * @var MasterProjectRepository
-     */
-    private $masterProjectRepository;
 
     /**
      * @var ChildProjectRepository
@@ -63,6 +56,11 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
     private $filesRepository;
 
     /**
+     * @var DqfSegmentsStruct
+     */
+    private $dqfSegmentsStruct;
+
+    /**
      * @param UpdateSegmentTranslationCommand $command
      *
      * @return mixed
@@ -85,11 +83,9 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
     private function setUp( UpdateSegmentTranslationCommand $command ) {
         $this->command = $command;
         $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
+        $this->transformer        = new SegmentTransformer();
 
-        // REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        $uid = $this->chunk->getProject()->getOriginalOwner()->getUid();
-        // THIS MUST BE CHANGED
-
+        $uid          = $this->getTranslatorUid( $command->job_id, $command->job_password );
         $sessionId    = $this->getSessionId( $uid );
         $genericEmail = $this->getGenericEmail( $uid );
 
@@ -102,47 +98,42 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
         $dqfFileMapDao          = new DqfFileMapDao();
         $this->dqfFileMapStruct = $dqfFileMapDao->findOne( $command->id_file, $command->job_id );
 
-        $this->masterProjectRepository = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
-        $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
-        $this->translationRepository   = new TranslationRepository( ClientFactory::create(), $sessionId, $genericEmail );
-        $this->filesRepository         = new FilesRepository( ClientFactory::create(), $sessionId, $genericEmail );
+        // get the DqfId of translation
+        $dqfSegmentsDao = new DqfSegmentsDao();
+        $this->dqfSegmentsStruct = $dqfSegmentsDao->getByIdSegment($command->id_segment);
+
+        // set repos
+        $this->childProjectRepository = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
+        $this->translationRepository  = new TranslationRepository( ClientFactory::create(), $sessionId, $genericEmail );
+        $this->filesRepository        = new FilesRepository( ClientFactory::create(), $sessionId, $genericEmail );
+
+        // transformer
+        $this->transformer    = new SegmentTransformer();
     }
 
     /**
      * @throws \Exception
      */
     private function submit() {
-        $masterProject     = $this->getDqfMasterProject();
-        $childProject      = $this->getDqfChildProject( $masterProject );
+        $childProject      = $this->getDqfChildProject();
         $file              = $this->getDqfFile( $childProject );
-        $translatedSegment = $this->getTranslatedSegment( $masterProject );
+        $translatedSegment = $this->getTranslatedSegment();
+        $translatedSegment->setDqfId((int)$this->dqfSegmentsStruct->dqf_translation_id);
 
-        $this->translationRepository->update($childProject, $file, $translatedSegment);
+        $this->translationRepository->update( $childProject, $file, $translatedSegment );
     }
 
     /**
-     * @return MasterProject
-     */
-    private function getDqfMasterProject() {
-        $dqfId   = (int)$this->dqfProjectMapStruct->dqf_parent_id;
-        $dqfUuid = $this->dqfProjectMapStruct->dqf_parent_uuid;
-
-        return $this->masterProjectRepository->get( $dqfId, $dqfUuid );
-    }
-
-    /**
-     * @param MasterProject $masterProject
-     *
      * @return mixed
      */
-    private function getDqfChildProject( MasterProject $masterProject ) {
+    private function getDqfChildProject() {
 
         // get DqfId and DqfUuid
         $dqfId   = (int)$this->dqfProjectMapStruct->dqf_project_id;
         $dqfUuid = $this->dqfProjectMapStruct->dqf_project_uuid;
 
         $childProject = $this->childProjectRepository->get( $dqfId, $dqfUuid );
-        $childProject->setParentProject( $masterProject );
+        $childProject->setParentProjectUuid( $this->dqfProjectMapStruct->dqf_parent_uuid );
 
         return $childProject;
     }
@@ -153,53 +144,21 @@ class UpdateSegmentTranslationCommandHandler extends AbstractCommandHanlder {
      * @return File
      */
     private function getDqfFile( ChildProject $childProject ) {
-        return $this->filesRepository->getByIdAndChildProject( $childProject->getDqfId(), $childProject->getDqfUuid(), $this->dqfFileMapStruct->dqf_id );
+        return $this->filesRepository->getByIdAndChildProject(
+                (int)$childProject->getDqfId(),
+                $childProject->getDqfUuid(),
+                (int)$this->dqfFileMapStruct->dqf_id
+        );
     }
 
     /**
-     * @param MasterProject $masterProject
-     *
      * @return TranslatedSegment
      * @throws \Exception
      */
-    private function getTranslatedSegment( MasterProject $masterProject ) {
+    private function getTranslatedSegment() {
         // get the segment translation
         $segmentTranslation = \Translations_SegmentTranslationDao::findBySegmentAndJob( $this->command->id_segment, $this->command->job_id );
-        $transformer        = new SegmentTransformer();
 
-        $transformedTranslation = $transformer->transform( $segmentTranslation );
-
-        $mtEngine        = $transformedTranslation[ 'mtEngineId' ];
-        $segmentOriginId = $transformedTranslation[ 'segmentOriginId' ];
-        $targetLang      = $transformedTranslation[ 'targetLang' ];
-        $targetSegment   = $transformedTranslation[ 'targetSegment' ];
-        $editedSegment   = $transformedTranslation[ 'editedSegment' ];
-        $sourceSegment   = $this->getDqfSourceSegment( $masterProject, $transformedTranslation[ 'sourceSegmentId' ] );
-
-        $segmentTranslation = new TranslatedSegment( $mtEngine, $segmentOriginId, $targetLang, $sourceSegment, $targetSegment, $editedSegment );
-        $segmentTranslation->setMatchRate( $transformedTranslation[ 'matchRate' ] );
-        $segmentTranslation->setTime( $transformedTranslation[ 'time' ] );
-        $segmentTranslation->setIndexNo( $transformedTranslation[ 'indexNo' ] );
-
-        return $segmentTranslation;
-    }
-
-    /**
-     * @param MasterProject $masterProject
-     * @param int           $sourceSegmentDqfId
-     *
-     * @return SourceSegment|null
-     */
-    private function getDqfSourceSegment( MasterProject $masterProject, $sourceSegmentDqfId ) {
-        $sourceSegments = $masterProject->getSourceSegments();
-
-        /** @var SourceSegment $sourceSegment */
-        foreach ( $sourceSegments as $sourceSegment ) {
-            if ( $sourceSegment->getDqfId() === $sourceSegmentDqfId ) {
-                return $sourceSegment;
-            }
-        }
-
-        return null;
+        return $this->getTranslatedSegmentFromTransformer($segmentTranslation);
     }
 }

@@ -44,6 +44,6 @@ class DqfFileMapDao extends DataAccess_AbstractDao  {
             'job_id' => $id_job,
         ]);
 
-        return $stmt->fetchAll()[0];
+        return $stmt->fetch();
     }
 }

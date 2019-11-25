@@ -10,8 +10,8 @@ namespace Features\Dqf\Controller\API;
 
 
 use API\V2\KleinController;
-use Features\Dqf\Utils\Factory\SessionProviderFactory;
-use Features\Dqf\Utils\Factory\UserRepositoryFactory;
+use Features\Dqf\Factory\SessionProviderFactory;
+use Features\Dqf\Factory\UserRepositoryFactory;
 
 class LoginController extends KleinController {
 
