@@ -27,47 +27,46 @@ class SessionProviderService {
     }
 
     /**
-     * @param $email
+     * @param string $email
+     * @param int    $externalId
      *
      * @return mixed
-     * @throws \Matecat\Dqf\Exceptions\SessionProviderException
-     * @throws \Predis\Connection\ConnectionException
-     * @throws \ReflectionException
+     * @throws \Exception
      */
-    public static function getAnonymous( $email ) {
+    public static function getAnonymous( $email, $externalId ) {
         $sessionProvider = self::getSessionProviderInstance();
 
         if ( false === $sessionProvider->hasGenericEmail( $email ) ) {
-            self::createAnonymous( $email );
+            self::createAnonymous( $email, $externalId );
         }
 
-        return $sessionProvider->getByGenericEmail( $email );
+        return $sessionProvider->getByGenericEmail( $email, $externalId );
     }
 
     /**
-     * @param $email
+     * @param string $email
+     * @param int    $externalId
      *
      * @throws \Matecat\Dqf\Exceptions\SessionProviderException
      * @throws \Predis\Connection\ConnectionException
      * @throws \ReflectionException
      */
-    private static function createAnonymous( $email ) {
-        self::getSessionProviderInstance()->create([
-                'genericEmail' => $email,
-                'username' => \INIT::$DQF_GENERIC_USERNAME,
-                'password' => \INIT::$DQF_GENERIC_PASSWORD,
-                'isGeneric' => true,
-        ]);
+    private static function createAnonymous( $email, $externalId ) {
+        self::getSessionProviderInstance()->create( [
+                'externalReferenceId' => $externalId,
+                'genericEmail'        => $email,
+                'username'            => \INIT::$DQF_GENERIC_USERNAME,
+                'password'            => \INIT::$DQF_GENERIC_PASSWORD,
+                'isGeneric'           => true,
+        ] );
     }
 
     /**
-     * @param      $externalReferenceId
+     * @param int $externalReferenceId
      * @param null $username
      * @param null $password
      *
      * @return mixed|void
-     * @throws \Matecat\Dqf\Exceptions\SessionProviderException
-     * @throws \Predis\Connection\ConnectionException
      * @throws \Exception
      */
     public static function get( $externalReferenceId, $username = null, $password = null ) {
@@ -89,15 +88,13 @@ class SessionProviderService {
      * @param $username
      * @param $password
      *
-     * @throws \Matecat\Dqf\Exceptions\SessionProviderException
-     * @throws \Predis\Connection\ConnectionException
-     * @throws \ReflectionException
+     * @throws \Exception
      */
     private static function create( $externalReferenceId, $username, $password ) {
-        self::getSessionProviderInstance()->create([
+        self::getSessionProviderInstance()->create( [
                 'externalReferenceId' => $externalReferenceId,
-                'username' => \INIT::$DQF_GENERIC_USERNAME,
-                'password' => \INIT::$DQF_GENERIC_PASSWORD,
-        ]);
+                'username'            => $username,
+                'password'            => $password,
+        ] );
     }
 }

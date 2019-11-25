@@ -4,7 +4,7 @@ use Features\Dqf\Utils\UserMetadata;
 use Teams\MembershipDao;
 use Teams\TeamDao;
 use Users\MetadataDao;
-use Features\Dqf\Utils\Factory\DataEncryptorFactory;
+use Features\Dqf\Factory\DataEncryptorFactory;
 
 /**
  * Created by PhpStorm.
@@ -123,8 +123,8 @@ class Users_UserStruct extends DataAccess_AbstractDaoSilentStruct implements Dat
 
         foreach ( $collection as $record ) {
 
-            // DQF decrypt
-            if ($record->key === UserMetadata::DQF_USERNAME_KEY or $record->key === UserMetadata::DQF_GENERIC_EMAIL or $record->key === UserMetadata::DQF_USERNAME_KEY ) {
+            // DQF decrypt username, password and email
+            if ($record->key === UserMetadata::DQF_USERNAME_KEY or $record->key === UserMetadata::DQF_GENERIC_EMAIL or $record->key === UserMetadata::DQF_PASSWORD_KEY ) {
                 $dataEncryptor = DataEncryptorFactory::create();
                 $record->value = $dataEncryptor->decrypt($record->value);
             }

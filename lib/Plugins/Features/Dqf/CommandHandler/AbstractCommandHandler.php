@@ -28,7 +28,7 @@ abstract class AbstractCommandHandler implements CommandHandlerInterface {
         $dataEncryptor = new DataEncryptor(\INIT::$DQF_ENCRYPTION_KEY, \INIT::$DQF_ENCRYPTION_IV);
 
         if ( $dqfUser->isGeneric() ) {
-            return SessionProviderService::getAnonymous( $dataEncryptor->decrypt($dqfUser->getGenericEmail()) );
+            return SessionProviderService::getAnonymous( $dataEncryptor->decrypt($dqfUser->getGenericEmail()), $externalId );
         }
 
         return SessionProviderService::get( $dqfUser->getExternalReferenceId(), $dataEncryptor->decrypt($dqfUser->getUsername()), $dataEncryptor->decrypt($dqfUser->getPassword()) );

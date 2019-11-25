@@ -15,6 +15,9 @@ use Features\Dqf\Utils\UserMetadata;
 
 class UserMetadataController extends AbstractStatefulKleinController {
 
+    /**
+     * @throws \Exception
+     */
     public function update() {
 
         if ( !$this->user ) {
