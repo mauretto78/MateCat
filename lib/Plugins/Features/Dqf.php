@@ -8,23 +8,19 @@ use BasicFeatureStruct;
 use Chunks_ChunkStruct;
 use Exceptions\ValidationError;
 use Features;
+use Features\Dqf\Factory\UserRepositoryFactory;
 use Features\Dqf\Model\RevisionChildProject;
 use Features\Dqf\Model\TranslationChildProject;
-use Features\Dqf\Model\UserModel;
-use Features\Dqf\Service\ChildProjectSegmentTranslation;
-use Features\Dqf\Service\SessionProvider;
-use Features\Dqf\Service\Struct\ProjectCreationStruct;
 use Features\Dqf\Utils\ProjectMetadata;
-use Features\Dqf\Utils\SegmentTranslationChecker;
+use Features\Dqf\Utils\SessionProviderService;
 use Features\ProjectCompletion\CompletionEventStruct;
 use Features\ReviewExtended\Model\ArchivedQualityReportModel;
 use INIT;
 use Klein\Klein;
+use Matecat\Dqf\Utils\DataEncryptor;
 use Monolog\Logger;
 use PHPTALWithAppend;
 use Projects_ProjectStruct;
-use Segments_SegmentStruct;
-use Translations_SegmentTranslationStruct;
 use Users_UserDao;
 use Users_UserStruct;
 use Utils;
@@ -51,6 +47,7 @@ class Dqf extends BaseFeature {
 
     /**
      * @return \Monolog\Logger
+     * @throws \Exception
      */
     public static function staticLogger() {
         if ( is_null( self::$logger ) ) {
@@ -111,8 +108,14 @@ class Dqf extends BaseFeature {
      * @throws \Exception
      */
     public function project_completion_event_saved( Chunks_ChunkStruct $chunk, CompletionEventStruct $params, $lastId ) {
-        // at this point we have to enqueue delivery to DQF of the translated or reviewed segments
+
         // TODO: put this in a queue for background processing
+        // CREATE CHILD TRANSLATION PROJECT HERE?????
+        // IS ENQUEUING NEEDED (FOR BACKGROUND PROCESSING)?
+
+
+        // at this point we have to enqueue delivery to DQF of the translated or reviewed segments
+
         if ( !$params->is_review ) {
             $translationChildProject = new TranslationChildProject( $chunk );
             $translationChildProject->createRemoteProjectsAndSubmit();
@@ -121,6 +124,10 @@ class Dqf extends BaseFeature {
     }
 
     public function archivedQualityReportSaved( ArchivedQualityReportModel $archivedQRModel ) {
+
+        // TODO: put this in a queue for background processing
+        // CREATE CHILD REVIEW PROJECT HERE?????
+        // IS ENQUEUING NEEDED (FOR BACKGROUND PROCESSING)?
 
         $revisionChildModel = new RevisionChildProject(
                 $archivedQRModel->getChunk(),
@@ -150,6 +157,11 @@ class Dqf extends BaseFeature {
      */
     public function filterCreateProjectFeatures( $features, $controller ) {
         if ( isset( $controller->postInput[ 'dqf' ] ) && !!$controller->postInput[ 'dqf' ] ) {
+
+            // loop $controller->postInput to validate
+
+
+
             $validationErrors = ProjectMetadata::getValiationErrors( $controller->postInput );
 
             if ( !empty( $validationErrors ) ) {
@@ -167,19 +179,21 @@ class Dqf extends BaseFeature {
     }
 
     /**
+     * Create a Master Project on DQF
+     *
      * @param $projectStructure
      *
-     * @throws \StompException
+     * @throws \Exception
      */
     public function postProjectCommit( $projectStructure ) {
-        $struct = new ProjectCreationStruct( [
+        $params = [
                 'id_project'          => $projectStructure[ 'id_project' ],
                 'source_language'     => $projectStructure[ 'source_language' ],
                 'file_segments_count' => $projectStructure[ 'file_segments_count' ]
-        ] );
+        ];
 
         WorkerClient::init( new AMQHandler() );
-        WorkerClient::enqueue( 'DQF', '\Features\Dqf\Worker\CreateProjectWorker', $struct->toArray() );
+        WorkerClient::enqueue( 'DQF', '\Features\Dqf\Worker\CreateProjectWorker', $params );
     }
 
     public static function loadRoutes( Klein $klein ) {
@@ -224,18 +238,17 @@ class Dqf extends BaseFeature {
      */
     public function validateProjectCreation( $projectStructure ) {
 
+        // define errors
+        $error_user_not_set       = [ 'code' => -1000, 'message' => 'DQF user is not set' ];
+        $error_session_id_not_set = [ 'code' => -1000, 'message' => 'DQF sessionId not set.' ];
+        $error_on_remote_login    = [ 'code' => -1000, 'message' => 'DQF credentials are not correct.' ];
+
         if ( count( $projectStructure[ 'target_language' ] ) > 1 ) {
             $multilang_error                            = [ 'code' => -1000, 'message' => 'Cannot create multilanguage projects when DQF option is enabled' ];
             $projectStructure[ 'result' ][ 'errors' ][] = $multilang_error;
 
             return;
         }
-
-        if ( $projectStructure[ 'metadata' ] ) {
-            // TODO: other incoming DQF related options to be validated
-        }
-
-        $error_user_not_set = [ 'code' => -1000, 'message' => 'DQF user is not set' ];
 
         if ( empty( $projectStructure[ 'id_customer' ] ) ) {
             $projectStructure[ 'result' ][ 'errors' ][] = $error_user_not_set;
@@ -251,19 +264,36 @@ class Dqf extends BaseFeature {
             return;
         }
 
-        $dqfUser = new UserModel( $user );
+        $userRepo = UserRepositoryFactory::create();
+        $dqfUser  = $userRepo->getByExternalId( $user->getUid() );
 
-        if ( !$dqfUser->hasCredentials() ) {
+        if ( false === $dqfUser or null === $dqfUser ) {
             $projectStructure[ 'result' ][ 'errors' ][] = $error_user_not_set;
 
             return;
         }
 
-        $error_on_remote_login = [ 'code' => -1000, 'message' => 'DQF credentials are not correct.' ];
-        if ( !$dqfUser->validCredentials() ) {
-            $projectStructure[ 'result' ][ 'errors' ][] = $error_on_remote_login;
+        if ( empty( $dqfUser->getSessionId() ) ) {
+            $projectStructure[ 'result' ][ 'errors' ][] = $error_session_id_not_set;
 
             return;
+        }
+
+        if ( false === $dqfUser->isSessionStillValid() ) {
+
+            $dataEncryptor = new DataEncryptor( \INIT::$DQF_ENCRYPTION_KEY, \INIT::$DQF_ENCRYPTION_IV );
+
+            try {
+                if ( $dqfUser->isGeneric() ) {
+                    SessionProviderService::getAnonymous( $dataEncryptor->decrypt( $dqfUser->getGenericEmail() ), $dqfUser->getExternalReferenceId() );
+                } else {
+                    SessionProviderService::get( $dqfUser->getExternalReferenceId(), $dataEncryptor->decrypt( $dqfUser->getUsername() ), $dataEncryptor->decrypt( $dqfUser->getPassword() ) );
+                }
+            } catch ( \Exception $exception ) {
+                $projectStructure[ 'result' ][ 'errors' ][] = $error_on_remote_login;
+
+                return;
+            }
         }
 
         // At this point we are sure ReviewExtended::loadAndValidateModelFromJsonFile was called already
@@ -278,44 +308,18 @@ class Dqf extends BaseFeature {
     }
 
     /**
-     * DQF projects can be splitted only one time.
+     * DQF projects can be split only one time.
      *
      * @param $projectStructure
      */
     public function postJobSplitted( $projectStructure ) {
-
     }
 
     /**
-     * ----------------------------------------------------------
      * Send a single translation to DQF
-     * ----------------------------------------------------------
-     *
-     * Update the segment translation only if:
-     * - the segment translation is in TRANSLATION status
-     * - these is already a DQF project including the segment translation
      *
      * @param $params
      */
     public function setTranslationCommitted( $params ) {
-
-        if ( ( new SegmentTranslationChecker() )->isSingleUpdateAllowed( $params[ 'translation' ] ) ) {
-            /** @var Segments_SegmentStruct $segment */
-            $segment = $params[ 'segment' ];
-
-            /** @var Users_UserStruct $user */
-            $user = $params[ 'user' ];
-
-            /** @var Translations_SegmentTranslationStruct $translation */
-            $translation = $params[ 'translation' ];
-
-            try {
-                $session            = SessionProvider::getByUserId( $user->getUid() );
-                $segmentTranslation = new ChildProjectSegmentTranslation( $session, $translation );
-                $segmentTranslation->process();
-            } catch ( \Exception $e ) {
-                \Log::doJsonLog( "Segment with ID  " . $segment->id . " cannot be sent to DQF." );
-            }
-        }
     }
 }

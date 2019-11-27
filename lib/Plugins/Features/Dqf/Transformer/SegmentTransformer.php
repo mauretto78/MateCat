@@ -30,9 +30,9 @@ class SegmentTransformer implements TransformerInterface {
      */
     public function transform( \DataAccess_AbstractDaoObjectStruct $struct ) {
 
-        if(false === $struct instanceof Translations_SegmentTranslationStruct){
-            throw new \InvalidArgumentException('Provided struct is not a valid instance of ' . Translations_SegmentTranslationStruct::class);
-        }
+//        if(false === $struct instanceof Translations_SegmentTranslationStruct){
+//            throw new \InvalidArgumentException('Provided struct is not a valid instance of ' . Translations_SegmentTranslationStruct::class);
+//        }
 
         /** @var Translations_SegmentTranslationStruct $struct */
         $segment             = ( new \Segments_SegmentDao() )->getById( $struct->id_segment );

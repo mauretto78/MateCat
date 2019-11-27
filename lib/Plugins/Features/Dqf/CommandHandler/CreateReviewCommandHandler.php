@@ -2,7 +2,6 @@
 
 namespace Features\Dqf\CommandHandler;
 
-use Constants_TranslationStatus;
 use Features\Dqf\Command\CreateReviewCommand;
 use Features\Dqf\Factory\ClientFactory;
 use Features\Dqf\Model\DqfFileMapDao;
@@ -10,9 +9,10 @@ use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfReviewsDao;
 use Features\Dqf\Model\DqfSegmentsDao;
+use Features\Dqf\Model\TranslationVersionDao;
 use Features\Dqf\Transformer\ReviewTransformer;
 use Features\Dqf\Transformer\SegmentTransformer;
-use Features\ReviewExtended\Model\QualityReportDao;
+use LQA\EntryDao;
 use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
@@ -121,7 +121,6 @@ class CreateReviewCommandHandler extends AbstractCommandHandler {
         $segmentTransformer = new SegmentTransformer();
         $reviewTransformer  = new ReviewTransformer();
         $dqfSegmentsDao     = new DqfSegmentsDao();
-        $qualityReportDao   = new QualityReportDao();
 
         // loop all chunk files
         foreach ( $this->chunk->getFiles() as $file ) {
@@ -130,70 +129,68 @@ class CreateReviewCommandHandler extends AbstractCommandHandler {
             $dqfFileMapStruct = $dqfFileMapDao->findOne( $file->id, $this->command->job_id );
             $dqfFile          = $this->getDqfFile( $childReview, $dqfFileMapStruct->dqf_id );
 
-            // get all 'APPROVED' segmentTranslation by files
-            $approvedSegmentTranslations = ( new \Translations_SegmentTranslationDao() )->getByFileJobIdAndStatus( $file->id, $this->chunk->id, Constants_TranslationStatus::STATUS_APPROVED );
-            foreach ( $approvedSegmentTranslations as $translation ) {
+            // get all issues
+            $issues = ( new EntryDao() )->getByJobIdAndSourcePage( $this->command->job_id, $this->command->source_page );
 
-                $segmentId = $translation->id_segment;
-                $issues    = $qualityReportDao->getReviseIssuesBySegmentTranslation( $segmentId );
+            foreach ( $issues as $issue ) {
 
-                if ( count( $issues ) > 0 ) {
-
-                    // get the transformed translation
-                    $transformedTranslation = $segmentTransformer->transform( $translation );
-
-                    // get dqf id of segment and translation
-                    $dqfSegmentsStruct = $dqfSegmentsDao->getByIdSegmentAndDqfProjectId( (int)$segmentId, (int)$this->dqfProjectMapStruct->dqf_parent_id   );
-
-                    // get the TranslatedSegment from DQF
-                    $translatedSegment = $this->translationRepository->getTranslatedSegment(
-                            (int)$this->dqfProjectMapStruct->dqf_parent_id,
-                            $this->dqfProjectMapStruct->dqf_parent_uuid,
-                            (int)$dqfFileMapStruct->dqf_id, $this->chunk->target,
-                            (int)$dqfSegmentsStruct->dqf_segment_id,
-                            (int)$dqfSegmentsStruct->dqf_translation_id
-                    );
-
-                    // init ReviewBatch
-                    $batchId     = \Utils::createToken();
-                    $reviewBatch = new ReviewBatch( $childReview, $dqfFile, $this->chunk->target, $translatedSegment, $batchId );
-
-                    // init the ReviewedSegment
-                    $reviewedSegmentClientId = \Utils::createToken();
-                    $reviewedSegment         = new ReviewedSegment( 'this is a comment' ); // @TODO UPDATE COMMENT
-                    $reviewedSegment->setClientId( $reviewedSegmentClientId );
-
-                    // set the correction
-                    $correction  = new RevisionCorrection( $transformedTranslation[ 'editedSegment' ], $transformedTranslation[ 'time' ] );
-                    $corrections = RevisionCorrectionAnalyser::analyse( $transformedTranslation[ 'targetSegment' ], $transformedTranslation[ 'editedSegment' ] );
-
-                    foreach ( $corrections as $key => $value ) {
-                        $correction->addItem( new RevisionCorrectionItem( $key, $value ) );
-                    }
-
-                    $reviewedSegment->setCorrection( $correction );
-
-                    // set errors
-                    // by looping all the issues for the segmentTranslation on Matecat
-                    foreach ( $issues as $issue ) {
-                        $transformedIssue = $reviewTransformer->transform( $issue );
-
-                        $reviewedSegment->addError( new RevisionError(
-                                $transformedIssue[ 'errorCategoryId' ],
-                                $transformedIssue[ 'severityId' ],
-                                $transformedIssue[ 'charPosStart' ],
-                                $transformedIssue[ 'charPosEnd' ],
-                                $transformedIssue[ 'isRepeated' ]
-                        ) );
-                    }
-
-                    $reviewBatch->addReviewedSegment( $reviewedSegment );
-
-                    /** @var ReviewBatch $savedReviewBatch */
-                    $savedReviewBatch = $this->reviewRepository->save( $reviewBatch );
-
-                    $this->writeReviews($savedReviewBatch);
+                $translation = ( new TranslationVersionDao() )->getByIdSegmentAndVersionNumber( $issue->id_segment, $issue->translation_version );
+                if ( !$translation ) {
+                    $translation = \Translations_SegmentTranslationDao::findBySegmentAndJob( $issue->id_segment, $issue->id_job );
                 }
+
+                $transformedTranslation = $segmentTransformer->transform( $translation );
+
+                // get dqf id of segment and translation
+                $dqfSegmentsStruct = $dqfSegmentsDao->getByIdSegmentAndDqfProjectId( (int)$issue->id_segment, (int)$this->dqfProjectMapStruct->dqf_parent_id );
+
+                // get the TranslatedSegment from DQF
+                $translatedSegment = $this->translationRepository->getTranslatedSegment(
+                        (int)$this->dqfProjectMapStruct->dqf_parent_id,
+                        $this->dqfProjectMapStruct->dqf_parent_uuid,
+                        (int)$dqfFileMapStruct->dqf_id, $this->chunk->target,
+                        (int)$dqfSegmentsStruct->dqf_segment_id,
+                        (int)$dqfSegmentsStruct->dqf_translation_id
+                );
+
+                // init ReviewBatch
+                $batchId     = \Utils::createToken();
+                $reviewBatch = new ReviewBatch( $childReview, $dqfFile, $this->chunk->target, $translatedSegment, $batchId );
+
+                // init the ReviewedSegment
+                $reviewedSegmentClientId = \Utils::createToken();
+                $reviewedSegment         = new ReviewedSegment( $issue->comment );
+                $reviewedSegment->setClientId( $reviewedSegmentClientId );
+
+                // set the correction
+                $correction  = new RevisionCorrection( $transformedTranslation[ 'editedSegment' ], $transformedTranslation[ 'time' ] );
+                $corrections = RevisionCorrectionAnalyser::analyse( $transformedTranslation[ 'targetSegment' ], $transformedTranslation[ 'editedSegment' ] );
+
+                foreach ( $corrections as $key => $value ) {
+                    $correction->addItem( new RevisionCorrectionItem( $key, $value ) );
+                }
+
+                $reviewedSegment->setCorrection( $correction );
+
+                // set errors
+                // by looping all the issues for the segmentTranslation on Matecat
+                $transformedIssue = $reviewTransformer->transform( $issue );
+
+                $reviewedSegment->addError( new RevisionError(
+                        $transformedIssue[ 'errorCategoryId' ],
+                        $transformedIssue[ 'severityId' ],
+                        $transformedIssue[ 'charPosStart' ],
+                        $transformedIssue[ 'charPosEnd' ],
+                        $transformedIssue[ 'isRepeated' ]
+                ) );
+
+
+                $reviewBatch->addReviewedSegment( $reviewedSegment );
+
+                /** @var ReviewBatch $savedReviewBatch */
+                $savedReviewBatch = $this->reviewRepository->save( $reviewBatch );
+
+                $this->writeReviews( $savedReviewBatch );
             }
         }
     }
@@ -203,7 +200,7 @@ class CreateReviewCommandHandler extends AbstractCommandHandler {
      *
      * @return mixed
      */
-    private function getDqfChildProject(  ) {
+    private function getDqfChildProject() {
 
         // get DqfId and DqfUuid
         $dqfId   = (int)$this->dqfProjectMapStruct->dqf_project_id;
@@ -230,13 +227,13 @@ class CreateReviewCommandHandler extends AbstractCommandHandler {
      *
      * @throws \Exception
      */
-    private function writeReviews(ReviewBatch $savedReviewBatch) {
+    private function writeReviews( ReviewBatch $savedReviewBatch ) {
         $values = [];
 
         $ppid = $savedReviewBatch->getChildProject()->getDqfId();
-        $tid = $savedReviewBatch->getTranslation()->getDqfId();
+        $tid  = $savedReviewBatch->getTranslation()->getDqfId();
 
-        foreach ($savedReviewBatch->getReviewedSegments() as $reviewedSegment){
+        foreach ( $savedReviewBatch->getReviewedSegments() as $reviewedSegment ) {
             $values[] = [
                     $tid,
                     $reviewedSegment->getDqfId(),
@@ -246,6 +243,6 @@ class CreateReviewCommandHandler extends AbstractCommandHandler {
 
 
         $dqfReviewsDao = new DqfReviewsDao();
-        $dqfReviewsDao->insertOrUpdateInATransaction($values);
+        $dqfReviewsDao->insertOrUpdateInATransaction( $values );
     }
 }

@@ -14,8 +14,7 @@ class SessionProviderService {
 
     /**
      * @return SessionProvider
-     * @throws \Predis\Connection\ConnectionException
-     * @throws \ReflectionException
+     * @throws \Exception
      */
     private static function getSessionProviderInstance() {
 
@@ -47,9 +46,7 @@ class SessionProviderService {
      * @param string $email
      * @param int    $externalId
      *
-     * @throws \Matecat\Dqf\Exceptions\SessionProviderException
-     * @throws \Predis\Connection\ConnectionException
-     * @throws \ReflectionException
+     * @throws \Exception
      */
     private static function createAnonymous( $email, $externalId ) {
         self::getSessionProviderInstance()->create( [

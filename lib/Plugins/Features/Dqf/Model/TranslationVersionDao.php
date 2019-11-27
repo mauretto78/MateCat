@@ -216,5 +216,24 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
         return is_null( $row[ 'current_version' ] ) || $row[ 'current_version' ] == 0;
     }
 
+    /**
+     * @param $id_segment
+     * @param $version_number
+     *
+     * @return \Translations_TranslationVersionStruct
+     */
+    public function getByIdSegmentAndVersionNumber($id_segment, $version_number) {
+        $sql = " SELECT * FROM segment_translation_versions WHERE version_number = :version_number AND id_segment = :id_segment";
 
+        $conn = \Database::obtain()->getConnection();
+        $stmt = $conn->prepare( $sql );
+        $stmt->setFetchMode( \PDO::FETCH_CLASS, 'Translations_TranslationVersionStruct' );
+
+        $stmt->execute( [
+                'id_segment' => $id_segment,
+                'version_number' => $version_number,
+        ] );
+
+        return $stmt->fetch();
+    }
 }

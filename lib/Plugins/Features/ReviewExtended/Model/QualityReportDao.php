@@ -309,5 +309,4 @@ FROM  qa_entries issues
         return $stmt->fetchAll();
 
     }
-
 }

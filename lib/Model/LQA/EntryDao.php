@@ -228,4 +228,27 @@ class EntryDao extends \DataAccess_AbstractDao {
         return $this->findById( $opts['id'] );
     }
 
+    /**
+     * @param int $id_job
+     * @param int $source_page
+     *
+     * @return EntryStruct[]
+     * @throws \Exception
+     */
+    public function getByJobIdAndSourcePage( $id_job, $source_page ) {
+
+        $sql = " SELECT * FROM qa_entries WHERE id_job = :id_job AND deleted_at IS NULL AND source_page = :source_page";
+
+        $conn = \Database::obtain()->getConnection();
+        $stmt = $conn->prepare( $sql );
+        $stmt->setFetchMode( \PDO::FETCH_CLASS, 'LQA\EntryStruct' );
+
+        $stmt->execute( [
+                'id_job' => $id_job,
+                'source_page' => $source_page,
+        ] );
+
+        return $stmt->fetchAll();
+    }
+
 }

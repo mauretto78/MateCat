@@ -69,7 +69,7 @@ class manageController extends viewController {
             ]);
             (new UpdateSegmentTranslationCommandHandler())->handle($command);
 
-            // 5. Create Child Project review
+            // 5. Create Child Project review (R1)
             $command = new CreateChildProjectCommand([
                     'job_id' => 2,
                     'job_password' =>'aa28a6501983',
@@ -80,7 +80,24 @@ class manageController extends viewController {
             // 6. Update reviews
             $command = new CreateReviewCommand([
                     'job_id' => 2,
+                    'job_password' => 'aa28a6501983',
+                    'source_page' => 2,
+            ]);
+            (new CreateReviewCommandHandler())->handle($command);
+
+            // 7. Create another Child Project review (R2)
+            $command = new CreateChildProjectCommand([
+                    'job_id' => 2,
                     'job_password' =>'aa28a6501983',
+                    'type' => 'review',
+            ]);
+            (new CreateChildProjectCommandHandler())->handle($command);
+
+            // 8. Update reviews
+            $command = new CreateReviewCommand([
+                    'job_id' => 2,
+                    'job_password' =>'aa28a6501983',
+                    'source_page' => 3,
             ]);
             (new CreateReviewCommandHandler())->handle($command);
 

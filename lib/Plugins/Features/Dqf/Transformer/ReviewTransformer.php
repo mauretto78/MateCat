@@ -2,7 +2,8 @@
 
 namespace Features\Dqf\Transformer;
 
-use DataAccess\ShapelessConcreteStruct;
+use LQA\CategoryDao;
+use LQA\EntryStruct;
 
 class ReviewTransformer implements TransformerInterface {
 
@@ -44,11 +45,11 @@ class ReviewTransformer implements TransformerInterface {
      */
     public function transform( \DataAccess_AbstractDaoObjectStruct $struct ) {
 
-        if ( false === $struct instanceof ShapelessConcreteStruct ) {
-            throw new \InvalidArgumentException( 'Provided struct is not a valid instance of ' . ShapelessConcreteStruct::class );
+        if ( false === $struct instanceof EntryStruct ) {
+            throw new \InvalidArgumentException( 'Provided struct is not a valid instance of ' . EntryStruct::class );
         }
 
-        /** @var ShapelessConcreteStruct $struct */
+        /** @var EntryStruct $struct */
 
         $transformedArray                      = [];
         $transformedArray[ 'errorCategoryId' ] = $this->getErrorCategoryId($struct);
@@ -61,40 +62,45 @@ class ReviewTransformer implements TransformerInterface {
     }
 
     /**
-     * @param ShapelessConcreteStruct $struct
+     * @param EntryStruct $struct
      *
      * @return int
      */
-    private function getErrorCategoryId(ShapelessConcreteStruct $struct) {
+    private function getErrorCategoryId(EntryStruct $struct) {
+        $category = CategoryDao::findById($struct->id_category);
+        $label = $category->label;
+
         foreach ($this->qaModel['categories'] as $category){
-            if($struct->issue_category_label === $category['label']){
+            if($label === $category['label']){
                 return $category['dqf_id'];
             }
         }
     }
 
     /**
-     * @param ShapelessConcreteStruct $struct
+     * @param EntryStruct $struct
      *
      * @return int
      */
-    private function getSeverityId(ShapelessConcreteStruct $struct) {
+    private function getSeverityId(EntryStruct $struct) {
         foreach ($this->qaModel['severities'] as $severity){
-            if($struct->issue_severity === $severity['label']){
+            if($struct->severity === $severity['label']){
                 return $severity['dqf_id'];
             }
         }
     }
 
-    private function getCharPosStart(ShapelessConcreteStruct $struct) {
+    // @TODO is null for the moment. Waiting for developing of this feature
+    private function getCharPosStart(EntryStruct $struct) {
         return null;
     }
 
-    private function getCharPosEnd(ShapelessConcreteStruct $struct) {
+    // @TODO is null for the moment. Waiting for developing of this feature
+    private function getCharPosEnd(EntryStruct $struct) {
         return null;
     }
 
-    private function isRepeated(ShapelessConcreteStruct $struct) {
+    private function isRepeated(EntryStruct $struct) {
         return false;
     }
 }

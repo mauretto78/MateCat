@@ -9,12 +9,18 @@ class CategoryDao extends \DataAccess_AbstractDao {
 
     }
 
+    /**
+     * @param $id
+     *
+     * @return CategoryStruct
+     */
     public static function findById( $id ) {
         $sql = "SELECT * FROM qa_categories WHERE id = :id LIMIT 1" ;
         $conn = \Database::obtain()->getConnection();
         $stmt = $conn->prepare( $sql );
         $stmt->execute(array('id' => $id));
         $stmt->setFetchMode( \PDO::FETCH_CLASS, 'LQA\CategoryStruct' );
+
         return $stmt->fetch();
     }
 
