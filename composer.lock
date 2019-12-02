@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.121.1",
+            "version": "3.123.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "d766697d06ee0abff255f6c6d522c6e65a4cc767"
+                "reference": "3bf671629a3b2a5a5694f8dfee15686e586b33b6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/d766697d06ee0abff255f6c6d522c6e65a4cc767",
-                "reference": "d766697d06ee0abff255f6c6d522c6e65a4cc767",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/3bf671629a3b2a5a5694f8dfee15686e586b33b6",
+                "reference": "3bf671629a3b2a5a5694f8dfee15686e586b33b6",
                 "shasum": ""
             },
             "require": {
@@ -87,7 +87,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2019-11-22T19:14:53+00:00"
+            "time": "2019-11-26T19:08:40+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -437,16 +437,16 @@
         },
         {
             "name": "matecat/dqf-integrator",
-            "version": "v1.0.46",
+            "version": "v1.0.48",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/dqf-integrator.git",
-                "reference": "2e9d2755d48cdd94bc6c78d35ca5ef1054d18780"
+                "reference": "7aad3953a964ca71477a50b201e460d4180e5df1"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/2e9d2755d48cdd94bc6c78d35ca5ef1054d18780",
-                "reference": "2e9d2755d48cdd94bc6c78d35ca5ef1054d18780",
+                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/7aad3953a964ca71477a50b201e460d4180e5df1",
+                "reference": "7aad3953a964ca71477a50b201e460d4180e5df1",
                 "shasum": ""
             },
             "require": {
@@ -491,20 +491,20 @@
                 "dqf",
                 "php"
             ],
-            "time": "2019-11-25T14:41:45+00:00"
+            "time": "2019-11-29T16:40:43+00:00"
         },
         {
             "name": "matecat/simple-s3",
-            "version": "v1.5.7",
+            "version": "v1.5.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/simple-s3.git",
-                "reference": "62f409155dbcf42c34fed6abe566e8f6a4ab986e"
+                "reference": "0d6d760a6a15400ae3b828556f4cc05455a0d69e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/simple-s3/zipball/62f409155dbcf42c34fed6abe566e8f6a4ab986e",
-                "reference": "62f409155dbcf42c34fed6abe566e8f6a4ab986e",
+                "url": "https://api.github.com/repos/matecat/simple-s3/zipball/0d6d760a6a15400ae3b828556f4cc05455a0d69e",
+                "reference": "0d6d760a6a15400ae3b828556f4cc05455a0d69e",
                 "shasum": ""
             },
             "require": {
@@ -547,7 +547,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2019-11-15T10:14:34+00:00"
+            "time": "2019-11-29T09:13:20+00:00"
         },
         {
             "name": "matecat/whole-text-finder",
@@ -1279,16 +1279,16 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.12.0",
+            "version": "v1.13.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
-                "reference": "550ebaac289296ce228a706d0867afc34687e3f4"
+                "reference": "f8f0b461be3385e56d6de3dbb5a0df24c0c275e3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/550ebaac289296ce228a706d0867afc34687e3f4",
-                "reference": "550ebaac289296ce228a706d0867afc34687e3f4",
+                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/f8f0b461be3385e56d6de3dbb5a0df24c0c275e3",
+                "reference": "f8f0b461be3385e56d6de3dbb5a0df24c0c275e3",
                 "shasum": ""
             },
             "require": {
@@ -1300,7 +1300,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.12-dev"
+                    "dev-master": "1.13-dev"
                 }
             },
             "autoload": {
@@ -1333,20 +1333,20 @@
                 "polyfill",
                 "portable"
             ],
-            "time": "2019-08-06T08:03:45+00:00"
+            "time": "2019-11-27T13:56:44+00:00"
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.12.0",
+            "version": "v1.13.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "b42a2f66e8f1b15ccf25652c3424265923eb4f17"
+                "reference": "7b4aab9743c30be783b73de055d24a39cf4b954f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/b42a2f66e8f1b15ccf25652c3424265923eb4f17",
-                "reference": "b42a2f66e8f1b15ccf25652c3424265923eb4f17",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/7b4aab9743c30be783b73de055d24a39cf4b954f",
+                "reference": "7b4aab9743c30be783b73de055d24a39cf4b954f",
                 "shasum": ""
             },
             "require": {
@@ -1358,7 +1358,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.12-dev"
+                    "dev-master": "1.13-dev"
                 }
             },
             "autoload": {
@@ -1392,7 +1392,7 @@
                 "portable",
                 "shim"
             ],
-            "time": "2019-08-06T08:03:45+00:00"
+            "time": "2019-11-27T14:18:11+00:00"
         },
         {
             "name": "teapot/status-code",
@@ -1496,16 +1496,16 @@
         },
         {
             "name": "onelogin/php-saml",
-            "version": "2.18.0",
+            "version": "2.18.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/onelogin/php-saml.git",
-                "reference": "a1864313eb4e886bc26a77375ce204fad7027450"
+                "reference": "a4619e04e8e4b958a941a02125d1d9314ba5f0b3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/onelogin/php-saml/zipball/a1864313eb4e886bc26a77375ce204fad7027450",
-                "reference": "a1864313eb4e886bc26a77375ce204fad7027450",
+                "url": "https://api.github.com/repos/onelogin/php-saml/zipball/a4619e04e8e4b958a941a02125d1d9314ba5f0b3",
+                "reference": "a4619e04e8e4b958a941a02125d1d9314ba5f0b3",
                 "shasum": ""
             },
             "require": {
@@ -1545,7 +1545,7 @@
                 "onelogin",
                 "saml"
             ],
-            "time": "2019-11-19T16:03:59+00:00"
+            "time": "2019-11-25T17:31:38+00:00"
         },
         {
             "name": "phpdocumentor/reflection-common",

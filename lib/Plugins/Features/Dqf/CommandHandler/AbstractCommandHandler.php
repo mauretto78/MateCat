@@ -51,6 +51,22 @@ abstract class AbstractCommandHandler implements CommandHandlerInterface {
     }
 
     /**
+     * @param $externalId
+     *
+     * @return string|null
+     * @throws \Exception
+     */
+    protected function getAssignerEmail( $externalId) {
+
+        $userRepo = UserRepositoryFactory::create();
+        $dqfUser = $userRepo->getByExternalId($externalId);
+
+        $dataEncryptor = new DataEncryptor(\INIT::$DQF_ENCRYPTION_KEY, \INIT::$DQF_ENCRYPTION_IV);
+
+        return ( $dqfUser->isGeneric() ) ? $dataEncryptor->decrypt($dqfUser->getGenericEmail()) : $dataEncryptor->decrypt($dqfUser->getUsername());
+    }
+
+    /**
      * @param int $job_id
      * @param string $job_password
      *
@@ -58,8 +74,8 @@ abstract class AbstractCommandHandler implements CommandHandlerInterface {
      */
     protected function getTranslatorUid( $job_id, $job_password) {
         $jobsTranslatorsDao = new JobsTranslatorsDao();
-        $translatorPfoile = $jobsTranslatorsDao->findUserIdByJobIdAndPassword($job_id, $job_password);
+        $translatorProfile = $jobsTranslatorsDao->findUserIdByJobIdAndPassword($job_id, $job_password);
 
-        return (int)$translatorPfoile['uid_translator'];
+        return (int)$translatorProfile['uid_translator'];
     }
 }

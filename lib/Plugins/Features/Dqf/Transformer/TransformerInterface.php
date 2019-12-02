@@ -2,8 +2,6 @@
 
 namespace Features\Dqf\Transformer;
 
-use Translations_SegmentTranslationStruct;
-
 interface TransformerInterface {
 
     /**

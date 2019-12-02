@@ -10,7 +10,7 @@ use TaskRunner\Commons\AbstractWorker;
 use TaskRunner\Commons\QueueElement;
 use TaskRunner\Exceptions\EndQueueException;
 
-class CreateProjectWorker extends AbstractWorker {
+class CreateMasterProjectWorker extends AbstractWorker {
 
     /**
      * @var string

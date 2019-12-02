@@ -17,6 +17,7 @@ use Features\ProjectCompletion\CompletionEventStruct;
 use Features\ReviewExtended\Model\ArchivedQualityReportModel;
 use INIT;
 use Klein\Klein;
+use Matecat\Dqf\Cache\BasicAttributes;
 use Matecat\Dqf\Utils\DataEncryptor;
 use Monolog\Logger;
 use PHPTALWithAppend;
@@ -25,6 +26,7 @@ use Users_UserDao;
 use Users_UserStruct;
 use Utils;
 use WorkerClient;
+use Features\Dqf\Worker\CreateMasterProjectWorker;
 
 class Dqf extends BaseFeature {
 
@@ -81,7 +83,7 @@ class Dqf extends BaseFeature {
      * @return array
      */
     public function filterCreateProjectInputFilters( $inputFilter ) {
-        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() );
+        return array_merge( $inputFilter, ProjectMetadata::getInputFilter());
     }
 
     /**
@@ -158,14 +160,17 @@ class Dqf extends BaseFeature {
     public function filterCreateProjectFeatures( $features, $controller ) {
         if ( isset( $controller->postInput[ 'dqf' ] ) && !!$controller->postInput[ 'dqf' ] ) {
 
-            // loop $controller->postInput to validate
+            $attributesArray = [
+                    BasicAttributes::CONTENT_TYPE  => $controller->postInput[ 'dqf_content_type' ],
+                    BasicAttributes::INDUSTRY      => $controller->postInput[ 'dqf_industry' ],
+                    BasicAttributes::PROCESS       => $controller->postInput[ 'dqf_process' ],
+                    BasicAttributes::QUALITY_LEVEL => $controller->postInput[ 'dqf_quality_level' ],
+            ];
 
-
-
-            $validationErrors = ProjectMetadata::getValiationErrors( $controller->postInput );
-
-            if ( !empty( $validationErrors ) ) {
-                throw new ValidationError( 'input validation failed: ' . implode( ', ', $validationErrors ) );
+            foreach ($attributesArray as $key => $id){
+                if (false === BasicAttributes::existsById($key, $id)) {
+                    throw new ValidationError( 'input validation failed: ' . $id . ' is not a valid value for ' . $key . ' attribute.' );
+                }
             }
 
             $features[ Features::DQF ] = new BasicFeatureStruct( [ 'feature_code' => Features::DQF ] );
@@ -175,7 +180,7 @@ class Dqf extends BaseFeature {
     }
 
     public function filterNewProjectInputFilters( $inputFilter ) {
-        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() );
+        return array_merge( $inputFilter, ProjectMetadata::getInputFilter());
     }
 
     /**
@@ -193,7 +198,7 @@ class Dqf extends BaseFeature {
         ];
 
         WorkerClient::init( new AMQHandler() );
-        WorkerClient::enqueue( 'DQF', '\Features\Dqf\Worker\CreateProjectWorker', $params );
+        WorkerClient::enqueue( 'DQF', CreateMasterProjectWorker::class, $params );
     }
 
     public static function loadRoutes( Klein $klein ) {

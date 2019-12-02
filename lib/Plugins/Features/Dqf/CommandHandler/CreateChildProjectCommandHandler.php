@@ -36,6 +36,11 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
     private $chunk;
 
     /**
+     * @var int
+     */
+    private $uid;
+
+    /**
      * @param CreateChildProjectCommand $command
      *
      * @return mixed|void
@@ -70,9 +75,9 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
         $this->command = $command;
         $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
-        $uid          = $this->getTranslatorUid( $command->job_id, $command->job_password );
-        $sessionId    = $this->getSessionId( $uid );
-        $genericEmail = $this->getGenericEmail( $uid );
+        $this->uid    = $this->getTranslatorUid( $command->job_id, $command->job_password );
+        $sessionId    = $this->getSessionId( $this->uid );
+        $genericEmail = $this->getGenericEmail( $this->uid );
 
         $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
@@ -101,6 +106,7 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
         $childProject->setParentProjectUuid( $parentProject->dqf_project_uuid );
         $childProject->setClientId( $clientId );
         $childProject->setIsDummy( false );
+        $childProject->setAssigner( $this->getAssignerEmail( $this->uid ) );
         $this->setReviewSettings( $childProject );
 
         $dqfChildProject = $this->childProjectRepository->save( $childProject );

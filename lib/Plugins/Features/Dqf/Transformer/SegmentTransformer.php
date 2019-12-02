@@ -3,7 +3,6 @@
 namespace Features\Dqf\Transformer;
 
 use Chunks_ChunkStruct;
-use Features\Dqf\Model\CachedAttributes\SegmentOrigin;
 use Features\Dqf\Model\DqfProjectMapDao;
 use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Model\ExtendedTranslationStruct;
@@ -15,13 +14,7 @@ use Translations_SegmentTranslationStruct;
 class SegmentTransformer implements TransformerInterface {
 
     /**
-     * ----------------------------------------------------------
      * Transform a normal segment translation struct into a array structure suitable for DQF analysis
-     * ----------------------------------------------------------
-     *
-     * The segment translation single update is allowed only if:
-     * - the segment translation is in TRANSLATION status
-     * - these is already a DQF project including the segment translation
      *
      * @param \DataAccess_AbstractDaoObjectStruct $struct
      *
@@ -30,11 +23,11 @@ class SegmentTransformer implements TransformerInterface {
      */
     public function transform( \DataAccess_AbstractDaoObjectStruct $struct ) {
 
-//        if(false === $struct instanceof Translations_SegmentTranslationStruct){
-//            throw new \InvalidArgumentException('Provided struct is not a valid instance of ' . Translations_SegmentTranslationStruct::class);
-//        }
+        if(false === $struct instanceof Translations_SegmentTranslationStruct and false === $struct instanceof \Translations_TranslationVersionStruct){
+            throw new \InvalidArgumentException('Provided struct is not a valid instance of ' . Translations_SegmentTranslationStruct::class . ' or ' . \Translations_TranslationVersionStruct::class);
+        }
 
-        /** @var Translations_SegmentTranslationStruct $struct */
+        /** @var Translations_SegmentTranslationStruct|\Translations_TranslationVersionStruct $struct */
         $segment             = ( new \Segments_SegmentDao() )->getById( $struct->id_segment );
         $chunk               = $struct->getChunk();
         $extendedTranslation = $this->getExtendedTranslationForASegment( $segment, $this->getLimitDate( $struct, $chunk ) );
@@ -78,24 +71,24 @@ class SegmentTransformer implements TransformerInterface {
     }
 
     /**
-     * @param Translations_SegmentTranslationStruct $translation
+     * @param Translations_SegmentTranslationStruct|\Translations_TranslationVersionStruct $translation
      *
      * @return string
      */
-    private function getProjectType( Translations_SegmentTranslationStruct $translation ) {
+    private function getProjectType( $translation ) {
         return ( $translation->isReviewedStatus() ) ? DqfProjectMapDao::PROJECT_TYPE_REVISE : DqfProjectMapDao::PROJECT_TYPE_TRANSLATE;
     }
 
     /**
      * Find date of completion event for inverse type
      *
-     * @param Translations_SegmentTranslationStruct $translation
+     * @param Translations_SegmentTranslationStruct|\Translations_TranslationVersionStruct $translation
      * @param Chunks_ChunkStruct                    $chunk
      *
      * @return mixed
      * @throws \Exception
      */
-    private function getLimitDate( Translations_SegmentTranslationStruct $translation, Chunks_ChunkStruct $chunk ) {
+    private function getLimitDate( $translation, Chunks_ChunkStruct $chunk ) {
         $is_review = ( $this->getProjectType( $translation ) == DqfProjectMapDao::PROJECT_TYPE_REVISE );
         $prevEvent = \Chunks_ChunkCompletionEventDao::lastCompletionRecord( $chunk, [ 'is_review' => !$is_review ] );
 
@@ -120,6 +113,7 @@ class SegmentTransformer implements TransformerInterface {
                 'matchRate'  => $translation->suggestion_match
         ];
 
+        // Ebay
         $data = $chunk->getProject()->getFeatures()->filter(
                 'filterDqfSegmentOriginAndMatchRate', $data, $translation, $chunk
         );

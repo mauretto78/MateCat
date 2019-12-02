@@ -64,6 +64,7 @@ class CreateTranslationBatchCommandHandler extends AbstractTranslationCommandHan
             throw new \Exception( 'Provided command is not a valid instance of CreateMasterProjectCommand class' );
         }
 
+        /** @var CreateTranslationBatchCommand $command */
         $this->setUp( $command );
         $this->submitBatch();
     }

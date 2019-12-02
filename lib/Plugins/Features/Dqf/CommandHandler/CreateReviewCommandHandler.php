@@ -13,6 +13,7 @@ use Features\Dqf\Model\TranslationVersionDao;
 use Features\Dqf\Transformer\ReviewTransformer;
 use Features\Dqf\Transformer\SegmentTransformer;
 use LQA\EntryDao;
+use LQA\EntryStruct;
 use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
@@ -134,11 +135,8 @@ class CreateReviewCommandHandler extends AbstractCommandHandler {
 
             foreach ( $issues as $issue ) {
 
-                $translation = ( new TranslationVersionDao() )->getByIdSegmentAndVersionNumber( $issue->id_segment, $issue->translation_version );
-                if ( !$translation ) {
-                    $translation = \Translations_SegmentTranslationDao::findBySegmentAndJob( $issue->id_segment, $issue->id_job );
-                }
-
+                // get the transformed translation
+                $translation = $this->getTranslation($issue);
                 $transformedTranslation = $segmentTransformer->transform( $translation );
 
                 // get dqf id of segment and translation
@@ -220,6 +218,20 @@ class CreateReviewCommandHandler extends AbstractCommandHandler {
      */
     private function getDqfFile( ChildProject $childProject, $dqfFileMapStructId ) {
         return $this->filesRepository->getByIdAndChildProject( $childProject->getDqfId(), $childProject->getDqfUuid(), (int)$dqfFileMapStructId );
+    }
+
+    /**
+     * @param EntryStruct $issue
+     *
+     * @return \Translations_SegmentTranslationStruct|\Translations_TranslationVersionStruct|null
+     */
+    private function getTranslation(EntryStruct $issue) {
+        $translation = ( new \Translations_TranslationVersionDao() )->getVersionNumberForTranslation( $this->command->job_id, $issue->id_segment, $issue->translation_version );
+        if ( !$translation ) {
+            return \Translations_SegmentTranslationDao::findBySegmentAndJob( $issue->id_segment, $issue->id_job );
+        }
+
+        return $translation;
     }
 
     /**

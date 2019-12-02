@@ -16,4 +16,11 @@ class Translations_TranslationVersionStruct extends DataAccess_AbstractDaoSilent
 
     public $old_status ;
     public $new_status ;
+
+    /**
+     * @return bool
+     */
+    public function isReviewedStatus() {
+        return $this->is_review === 1;
+    }
 }

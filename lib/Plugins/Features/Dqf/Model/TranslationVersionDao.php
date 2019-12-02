@@ -10,6 +10,8 @@ namespace Features\Dqf\Model;
 
 use DataAccess_AbstractDao;
 use Database;
+use Features\Dqf\Utils\SegmentOriginAnalyser;
+use Matecat\Dqf\Utils\Analysers\MatecatSegmentOriginAnalyser;
 use PDO;
 
 class TranslationVersionDao extends DataAccess_AbstractDao {
@@ -106,7 +108,7 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
                     'time'               => $row[ 'time_to_edit' ] - ( $row[ 'versioned_time_to_edit' ] || 0 )
             ];
 
-            $data                   = array_merge($data, $this->getSegmentOrigin( $row ));
+            $data                   = array_merge( $data, MatecatSegmentOriginAnalyser::analyse( $row ) );
             $result[ $row[ 'id' ] ] = new ExtendedTranslationStruct( $data );
         }
 
@@ -137,61 +139,6 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
     /**
      * @param $row
      *
-     * @return array
-     */
-    private function getSegmentOrigin( $row ) {
-
-        if ( !is_null( $row[ 'autopropagated_from' ] ) ) {
-            return [
-                    'segment_origin' => 'TM',
-                    'suggestion_match' => '100',
-            ];
-        }
-
-        if ( empty( $row[ 'suggestions_array' ] ) ) {
-            return [
-                    'segment_origin' => 'HT',
-                    'suggestion_match' => null
-            ];
-        }
-
-        $data = [];
-
-        if ( ( strpos( $row[ 'match_type' ], '100%' ) === 0 ) || $row[ 'match_type' ] == 'ICE' ) {
-            $data[ 'segment_origin' ]   = 'TM';
-            $data[ 'suggestion_match' ] = '100';
-        } elseif ( strpos( $row[ 'match_type' ], '%' ) !== false ) {
-            $data[ 'segment_origin' ]   = 'TM';
-            $data[ 'suggestion_match' ] = $row[ 'suggestion_match' ];
-        } elseif ( $row[ 'match_type' ] == 'MT' ) {
-            $data[ 'segment_origin' ] = 'MT';
-            $data[ 'suggestion_match' ] = null;
-        }
-
-        if ( !is_null( $row[ 'suggestion' ] ) && $row[ 'translation' ] !== $row[ 'suggestion' ] ) {
-            // find match for the applied suggestion
-            $suggestions = json_decode( $row[ 'suggestions_array' ], true );
-            $selected    = $suggestions[ $row[ 'suggestion_position' ] ];
-
-            if ( $selected[ 'created_by' ] == 'MT!' ) {
-                return [
-                        'segment_origin' => 'MT',
-                        'suggestion_match' => null
-                ];
-            }
-
-            return [
-                    'segment_origin' => 'TM',
-                    'suggestion_match' => str_replace( '%', '', $selected[ 'match' ] )
-            ];
-        }
-
-        return $data;
-    }
-
-    /**
-     * @param $row
-     *
      * @return mixed
      */
     private function __getOriginalVersion( $row ) {
@@ -214,26 +161,5 @@ class TranslationVersionDao extends DataAccess_AbstractDao {
      */
     private function __isFirstTranslation( $row ) {
         return is_null( $row[ 'current_version' ] ) || $row[ 'current_version' ] == 0;
-    }
-
-    /**
-     * @param $id_segment
-     * @param $version_number
-     *
-     * @return \Translations_TranslationVersionStruct
-     */
-    public function getByIdSegmentAndVersionNumber($id_segment, $version_number) {
-        $sql = " SELECT * FROM segment_translation_versions WHERE version_number = :version_number AND id_segment = :id_segment";
-
-        $conn = \Database::obtain()->getConnection();
-        $stmt = $conn->prepare( $sql );
-        $stmt->setFetchMode( \PDO::FETCH_CLASS, 'Translations_TranslationVersionStruct' );
-
-        $stmt->execute( [
-                'id_segment' => $id_segment,
-                'version_number' => $version_number,
-        ] );
-
-        return $stmt->fetch();
     }
 }
