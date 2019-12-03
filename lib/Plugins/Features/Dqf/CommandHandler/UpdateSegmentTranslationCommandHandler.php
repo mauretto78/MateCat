@@ -94,9 +94,11 @@ class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandH
         $projects                  = $dqfProjectMapDao->getByType( $this->chunk, 'translation' );
         $this->dqfProjectMapStruct = end( $projects );
 
+        $segment = (new \Segments_SegmentDao)->getById($this->command->id_segment);
+
         // get the DqfId of file
         $dqfFileMapDao          = new DqfFileMapDao();
-        $this->dqfFileMapStruct = $dqfFileMapDao->findOne( $command->id_file, $command->job_id );
+        $this->dqfFileMapStruct = $dqfFileMapDao->findOne( $segment->id_file, $command->job_id );
 
         // get the DqfId of translation
         $dqfSegmentsDao = new DqfSegmentsDao();

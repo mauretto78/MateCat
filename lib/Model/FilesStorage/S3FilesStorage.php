@@ -6,8 +6,8 @@ use DirectoryIterator;
 use DomainException;
 use INIT;
 use RedisHandler;
-use SimpleS3\Client;
-use SimpleS3\Components\Cache\RedisCache;
+use Matecat\SimpleS3\Client;
+use Matecat\SimpleS3\Components\Cache\RedisCache;
 
 /**
  * Class S3FilesStorage

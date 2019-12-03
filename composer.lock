@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.123.0",
+            "version": "3.125.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "3bf671629a3b2a5a5694f8dfee15686e586b33b6"
+                "reference": "d9ffe7cf9cc93d3c49f4f6d2db6cf0c469686f9c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/3bf671629a3b2a5a5694f8dfee15686e586b33b6",
-                "reference": "3bf671629a3b2a5a5694f8dfee15686e586b33b6",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/d9ffe7cf9cc93d3c49f4f6d2db6cf0c469686f9c",
+                "reference": "d9ffe7cf9cc93d3c49f4f6d2db6cf0c469686f9c",
                 "shasum": ""
             },
             "require": {
@@ -87,7 +87,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2019-11-26T19:08:40+00:00"
+            "time": "2019-12-02T23:15:42+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -437,16 +437,16 @@
         },
         {
             "name": "matecat/dqf-integrator",
-            "version": "v1.0.48",
+            "version": "v1.0.50",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/dqf-integrator.git",
-                "reference": "7aad3953a964ca71477a50b201e460d4180e5df1"
+                "reference": "9fc993b9f0156c0ff74673cfd9272281b1c64e7d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/7aad3953a964ca71477a50b201e460d4180e5df1",
-                "reference": "7aad3953a964ca71477a50b201e460d4180e5df1",
+                "url": "https://api.github.com/repos/matecat/dqf-integrator/zipball/9fc993b9f0156c0ff74673cfd9272281b1c64e7d",
+                "reference": "9fc993b9f0156c0ff74673cfd9272281b1c64e7d",
                 "shasum": ""
             },
             "require": {
@@ -491,7 +491,7 @@
                 "dqf",
                 "php"
             ],
-            "time": "2019-11-29T16:40:43+00:00"
+            "time": "2019-12-03T10:29:53+00:00"
         },
         {
             "name": "matecat/simple-s3",
@@ -1279,7 +1279,7 @@
         },
         {
             "name": "symfony/polyfill-ctype",
-            "version": "v1.13.0",
+            "version": "v1.13.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-ctype.git",
@@ -1337,7 +1337,7 @@
         },
         {
             "name": "symfony/polyfill-mbstring",
-            "version": "v1.13.0",
+            "version": "v1.13.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",

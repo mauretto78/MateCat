@@ -113,8 +113,8 @@ class CreateTranslationBatchCommandHandler extends AbstractTranslationCommandHan
             // init translationBatch
             $translationBatch = new TranslationBatch( $childProject, $dqfFile, $this->chunk->target );
 
-            // get all segmentTranslation by files
-            $translatedSegmentTranslations = ( new \Translations_SegmentTranslationDao() )->getByFile( $file );
+            // get all segmentTranslation (STATUS_TRANSLATED) by files
+            $translatedSegmentTranslations = ( new \Translations_SegmentTranslationDao() )->getByFileJobIdStatusAndSourcePage( $file->id, $this->command->job_id, Constants_TranslationStatus::STATUS_TRANSLATED );
             foreach ( $translatedSegmentTranslations as $translation ) {
 
                 // if the segment is NOT a new or draft

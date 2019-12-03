@@ -143,10 +143,11 @@ class Translations_SegmentTranslationDao extends DataAccess_AbstractDao {
      * @param int    $id_file
      * @param int    $id_job
      * @param string $status
+     * @param null   $source_page
      *
      * @return Translations_SegmentTranslationStruct[]
      */
-    public function getByFileJobIdAndStatus( $id_file, $id_job, $status ) {
+    public function getByFileJobIdStatusAndSourcePage( $id_file, $id_job, $status, $source_page = null ) {
 
         $allowed = [
             Constants_TranslationStatus::STATUS_NEW,
@@ -162,20 +163,33 @@ class Translations_SegmentTranslationDao extends DataAccess_AbstractDao {
             throw new \InvalidArgumentException($status . ' is not a valid status. [Allowed values:  ' . implode(',', $allowed) . '] ');
         }
 
+        $params = [
+                'id_file' => $id_file,
+                'id_job' => $id_job,
+                'status' => $status,
+        ];
+
         $query = "SELECT * FROM segment_translations st " .
-                " JOIN segments s on s.id  = st.id_segment AND s.id_file = :id_file " .
+                " JOIN segments s on s.id  = st.id_segment ";
+
+        // if is a revision
+        if($source_page and $source_page > 1){
+            $query = "AND ste.final_revision = 1 " .
+                    " AND source_page = :source_page";
+
+            $params['source_page'] = $source_page;
+        }
+
+        $query .= " AND s.id_file = :id_file " .
                 " AND st.id_job = :id_job " .
                 " AND st.status = :status " .
                 " WHERE s.show_in_cattool = 1 ";
 
+
         $conn = $this->database->getConnection();
         $stmt = $conn->prepare( $query );
         $stmt->setFetchMode( PDO::FETCH_CLASS, 'Translations_SegmentTranslationStruct' );
-        $stmt->execute( [
-                'id_file' => $id_file,
-                'id_job' => $id_job,
-                'status' => $status,
-        ] );
+        $stmt->execute($params);
 
         return $stmt->fetchAll();
     }

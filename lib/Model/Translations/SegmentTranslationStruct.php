@@ -48,6 +48,9 @@ class Translations_SegmentTranslationStruct extends DataAccess_AbstractDaoSilent
         });
     }
 
+    /**
+     * @return mixed
+     */
     public function getChunk() {
         return $this->cachable(__FUNCTION__, $this->id_job, function($id_job) {
             return Chunks_ChunkDao::getByJobID( $id_job )[ 0 ];
