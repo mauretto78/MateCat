@@ -8,6 +8,7 @@
 
 namespace Features\ReviewExtended\Model;
 
+use Constants;
 use DataAccess\ShapelessConcreteStruct;
 use DataAccess_AbstractDao;
 use Database;
@@ -105,11 +106,7 @@ SELECT
   issues.severity     as issue_severity,
   issues.comment      as issue_comment,
   issues.target_text  as target_text,
-  issues.uid          as issue_uid,
-
-  translation_warnings.scope as warning_scope,
-  translation_warnings.data as warning_data,
-  translation_warnings.severity as warning_severity
+  issues.uid          as issue_uid
 
 FROM segment_translations st
 
@@ -137,6 +134,7 @@ FROM segment_translations st
     ON issues.id_job = jobs.id
     AND issues.id_segment = s.id
     AND issues.translation_version = st.version_number
+    AND issues.deleted_at IS NULL
 
   LEFT JOIN qa_entry_comments comments
     ON comments.id_qa_entry = issues.id
@@ -144,17 +142,11 @@ FROM segment_translations st
   LEFT JOIN qa_categories
     ON issues.id_category = qa_categories.id
 
-  LEFT JOIN translation_warnings
-    ON translation_warnings.id_segment = s.id
-      AND translation_warnings.id_job = jobs.id
-
 WHERE
 
 s.show_in_cattool AND
 (
   st.status IN ( :approved, :rejected )
-  OR
-  translation_warnings.id_segment IS NOT NULL
 )
 
 ORDER BY f.id, s.id, issues.id, comments.id
@@ -194,6 +186,7 @@ SQL;
   issues.id as issue_id,
   issues.create_date as issue_create_date,
   issues.replies_count as issue_replies_count,
+  issues.source_page as source_page,
 
   -- start_offset and end_offset were introduced for DQF. We are taking for granted a string with
   -- both start_node and end_node equal to 0 ( no tags in target string ).
@@ -225,7 +218,7 @@ JOIN (
   LEFT JOIN translation_warnings
     ON translation_warnings.id_segment = issues.id_segment
 
-    WHERE issues.id_job = ?
+    WHERE issues.deleted_at IS NULL AND issues.id_job = ?
 
   ";
 
@@ -238,14 +231,17 @@ JOIN (
         return $stmt->fetchAll();
     }
 
-    public function getReviseIssuesByChunk( $job_id, $password ) {
+    public function getReviseIssuesByChunk( $job_id, $password , $source_page = null ) {
+
+        if ( is_null( $source_page ) ) {
+            $source_page = Constants::SOURCE_PAGE_REVISION  ;
+        }
 
         $sql = "SELECT
-
-  issues.id as issue_id,
-  qa_categories.label   as issue_category_label,
-  issues.id_category as id_category,
-  issues.severity     as issue_severity
+  issues.id             AS issue_id,
+  qa_categories.label   AS issue_category_label,
+  issues.id_category    AS id_category,
+  issues.severity       AS issue_severity
 
 FROM  qa_entries issues
 
@@ -256,9 +252,9 @@ JOIN jobs j ON issues.id_job = j.id
   LEFT JOIN qa_categories
     ON issues.id_category = qa_categories.id
 
-
     WHERE j.id = ? AND j.password = ?
-
+      AND issues.source_page = ?
+      AND issues.deleted_at IS NULL
   ";
 
         $conn = Database::obtain()->getConnection();
@@ -302,9 +298,7 @@ FROM  qa_entries issues
         $stmt = $conn->prepare( $sql );
         $stmt->setFetchMode( \PDO::FETCH_CLASS, '\DataAccess\ShapelessConcreteStruct' );
 
-        $stmt->execute( [
-                'id_segment' => $id_segment
-        ] );
+        $stmt->execute( [$job_id, $password, $source_page] );
 
         return $stmt->fetchAll();
 

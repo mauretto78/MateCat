@@ -9,9 +9,11 @@ use CommandLineTasks\CopyFilesFromS3Task;
 use CommandLineTasks\CreateTeamMembershipTask;
 use CommandLineTasks\CreateTeamTask;
 use CommandLineTasks\DumpSchemaTask;
+use CommandLineTasks\FindElementInS3CacheTask;
 use CommandLineTasks\Outsource\AirbnbOutsourceToHTS;
 use CommandLineTasks\Outsource\MicrosoftOutsourceToHTS;
 use CommandLineTasks\OwnerFeatures\AssignFeatureTask;
+use CommandLineTasks\SecondPassReview\FixChunkReviewRecordCounts;
 use CommandLineTasks\Test\PrepareDatabaseTask;
 use Features\Dqf\Task\DqfAttributesDumpTask;
 use Symfony\Component\Console\Application;
@@ -26,7 +28,10 @@ $app->add( new DumpSchemaTask() );
 $app->add( new DqfAttributesDumpTask() );
 $app->add( new MicrosoftOutsourceToHTS() );
 $app->add( new AirbnbOutsourceToHTS() );
-$app->add( new CopyFilesFromS3Task() );
+//$app->add( new CopyFilesFromS3Task() );
+//$app->add( new FindElementInS3CacheTask('dsa') );
+$app->add( new FixChunkReviewRecordCounts() );
+
 
 $app->run();
 

@@ -8,6 +8,7 @@ use INIT;
 use RedisHandler;
 use Matecat\SimpleS3\Client;
 use Matecat\SimpleS3\Components\Cache\RedisCache;
+use Matecat\SimpleS3\Components\Encoders\UrlEncoder;
 
 /**
  * Class S3FilesStorage
@@ -25,6 +26,7 @@ use Matecat\SimpleS3\Components\Cache\RedisCache;
  */
 class S3FilesStorage extends AbstractFilesStorage {
 
+    const ORIGINAL_ZIP_PLACEHOLDER = "__originalZip";
     const CACHE_PACKAGE_FOLDER   = 'cache-package';
     const FILES_FOLDER           = 'files';
     const QUEUE_FOLDER           = 'queue-projects';
@@ -35,17 +37,17 @@ class S3FilesStorage extends AbstractFilesStorage {
     /**
      * @var Client
      */
-    private $s3Client;
+    protected $s3Client;
 
     /**
      * @var Client
      */
-    private static $CLIENT;
+    protected static $CLIENT;
 
     /**
      * @var string
      */
-    private static $FILES_STORAGE_BUCKET;
+    protected static $FILES_STORAGE_BUCKET;
 
 
     /**
@@ -110,7 +112,7 @@ class S3FilesStorage extends AbstractFilesStorage {
     /**
      * set $FILES_STORAGE_BUCKET
      */
-    private static function setFilesStorageBucket() {
+    protected static function setFilesStorageBucket() {
         if ( null === \INIT::$AWS_STORAGE_BASE_BUCKET ) {
             throw new DomainException( '$AWS_STORAGE_BASE_BUCKET param is missing in INIT.php.' );
         }
@@ -168,7 +170,7 @@ class S3FilesStorage extends AbstractFilesStorage {
      *
      * @return string
      */
-    private function getCachePackageHashFolder( $hash, $lang ) {
+    public function getCachePackageHashFolder( $hash, $lang ) {
         $hashTree = self::composeCachePath( $hash );
 
         return self::CACHE_PACKAGE_FOLDER . DIRECTORY_SEPARATOR . $hashTree[ 'firstLevel' ] . DIRECTORY_SEPARATOR . $hashTree[ 'secondLevel' ] . DIRECTORY_SEPARATOR . $hashTree[ 'thirdLevel' ] .
@@ -268,11 +270,25 @@ class S3FilesStorage extends AbstractFilesStorage {
         $datePath = $hashes[ 0 ];
         $hash     = $hashes[ 1 ];
 
-        $origPrefix  = $this->getCachePackageHashFolder( $hash, $lang ) . '/orig';
-        $workPrefix  = $this->getCachePackageHashFolder( $hash, $lang ) . '/work';
+        $origPrefix = $this->getCachePackageHashFolder( $hash, $lang ) . '/orig';
+        $workPrefix = $this->getCachePackageHashFolder( $hash, $lang ) . '/work';
+
+        // get records from S3 cache
         $origItems   = $this->s3Client->getItemsInABucket( [ 'bucket' => static::$FILES_STORAGE_BUCKET, 'prefix' => $origPrefix ] );
         $workItems   = $this->s3Client->getItemsInABucket( [ 'bucket' => static::$FILES_STORAGE_BUCKET, 'prefix' => $workPrefix ] );
         $sourceItems = array_merge( $origItems, $workItems );
+
+        // if $sourceItems is empty, try to get the records from S3, skipping the cache
+        if ( empty( $sourceItems ) ) {
+            $origItems   = $this->s3Client->getItemsInABucket( [ 'bucket' => static::$FILES_STORAGE_BUCKET, 'prefix' => $origPrefix, 'exclude-cache' => true ] );
+            $workItems   = $this->s3Client->getItemsInABucket( [ 'bucket' => static::$FILES_STORAGE_BUCKET, 'prefix' => $workPrefix, 'exclude-cache' => true ] );
+            $sourceItems = array_merge( $origItems, $workItems );
+        }
+
+        // if $sourceItems is still empty, return false and then throw an Exception
+        if ( empty( $sourceItems ) ) {
+            return false;
+        }
 
         $destItems = [];
         foreach ( $sourceItems as $key ) {
@@ -285,15 +301,44 @@ class S3FilesStorage extends AbstractFilesStorage {
             $destItems[] = self::FILES_FOLDER . DIRECTORY_SEPARATOR . $datePath . DIRECTORY_SEPARATOR . $idFile . $folder . $this->getTheLastPartOfKey( $key );
         }
 
-        \Log::doJsonLog( 'project id ' . $idFile . ': copying files from cache package to project folder' );
-
-        return $this->s3Client->copyInBatch( [
+        $copied = $this->s3Client->copyInBatch( [
                 'source_bucket' => static::$FILES_STORAGE_BUCKET,
                 'files'         => [
                         'source' => $sourceItems,
                         'target' => $destItems,
                 ],
         ] );
+
+        \Log::doJsonLog( $this->getArrayMessageForLogs( $idFile, $datePath, $sourceItems, $destItems, $copied ) );
+
+        return $copied;
+    }
+
+    /**
+     * @param $idFile
+     * @param $datePath
+     * @param $sourceItems
+     * @param $destItems
+     * @param $copied
+     *
+     * @return array
+     */
+    private function getArrayMessageForLogs( $idFile, $datePath, $sourceItems, $destItems, $copied ) {
+        $log = [
+                'id_file'   => $idFile,
+                'date_path' => $datePath,
+                'files'     => [
+                        'source' => $sourceItems,
+                        'target' => $destItems,
+                ]
+        ];
+
+        $message = ( $copied === true ) ? 'Successfully copied files from cache package to files directory.' : 'Error during copying files from cache package to files directory.';
+
+        $log[ 'message' ] = $message;
+        $log[ 'copied' ]  = $copied;
+
+        return $log;
     }
 
     /**
@@ -642,7 +687,7 @@ class S3FilesStorage extends AbstractFilesStorage {
      *
      * @return bool
      */
-    private function tryToUploadAFile( $bucketName, $destination, $origPath ) {
+    protected function tryToUploadAFile( $bucketName, $destination, $origPath ) {
         try {
             $this->s3Client->uploadItem( [
                     'bucket' => $bucketName,

@@ -9,14 +9,19 @@
 namespace AsyncTasks\Workers;
 
 
+use Chunks_ChunkStruct;
+use Database;
+use Features;
+use Features\ReviewExtended\ReviewUtils;
+use Features\TranslationVersions\Model\BatchEventCreator;
+use Features\TranslationVersions\Model\SegmentTranslationEventModel;
 use INIT;
-use Jobs_JobStruct;
-use SegmentTranslationChangeVector;
 use Stomp;
 use TaskRunner\Commons\AbstractElement;
 use TaskRunner\Commons\AbstractWorker;
 use TaskRunner\Commons\QueueElement;
 use Translations_SegmentTranslationDao;
+use Users_UserDao;
 use WordCount_CounterModel;
 
 class BulkSegmentStatusChangeWorker extends AbstractWorker {
@@ -29,48 +34,62 @@ class BulkSegmentStatusChangeWorker extends AbstractWorker {
 
     /**
      * @param AbstractElement $queueElement
+     *
+     * @return mixed|void
+     * @throws \ReflectionException
+     * @throws \StompException
+     * @throws \TaskRunner\Exceptions\EndQueueException
      */
     public function process( AbstractElement $queueElement ) {
         /**
          * @var $queueElement QueueElement
          */
         $this->_checkForReQueueEnd( $queueElement );
+        $this->_checkDatabaseConnection();
         $this->_doLog( 'data: ' . var_export( $queueElement->params->toArray(), true ) );
 
         $params = $queueElement->params->toArray();
-        /** @var Jobs_JobStruct $job */
-        $job       = new Jobs_JobStruct( $params[ 'job' ]->toArray() );
-        $status    = $params[ 'destination_status' ];
-        $client_id = $params[ 'client_id' ];
+        /** @var Chunks_ChunkStruct $chunk */
+        $chunk         = new Chunks_ChunkStruct( $params['chunk']->toArray() ) ;
+        $status      = $params['destination_status'] ;
+        $client_id   = $params['client_id'];
+        $user        = ( new Users_UserDao())->getByUid( $params['id_user'] );
+        $source_page = ReviewUtils::revisionNumberToSourcePage( $params['revision_number'] );
 
-        $this->_checkDatabaseConnection();
 
-        $database = \Database::obtain();
-        $database->begin();
+        $database = Database::obtain() ;
+        $database->begin() ;
 
-        foreach ( $params[ 'segment_ids' ] as $segment ) {
+        $batchEventCreator = new BatchEventCreator( $chunk ) ;
+        $batchEventCreator->setFeatureSet( $chunk->getProject()->getFeatures() ) ;
+        $batchEventCreator->setProject( $chunk->getProject() );
 
-            $old_translation = Translations_SegmentTranslationDao::findBySegmentAndJob( $segment, $job->id );
+        foreach ( $params[ 'segment_ids' ] as $segment_id ) {
+
+            $old_translation = Translations_SegmentTranslationDao::findBySegmentAndJob( $segment_id, $chunk->id );
 
             if ( empty( $old_translation ) ) {
                 //no segment found
                 continue;
             }
 
-            $new_translation         = clone $old_translation;
-            $new_translation->status = $status;
+            $new_translation                   = clone $old_translation;
+            $new_translation->status           = $status;
+            $new_translation->translation_date = date( "Y-m-d H:i:s" );
 
-            Translations_SegmentTranslationDao::updateSegmentStatusBySegmentId( $job->id, $segment, $status );
+            Translations_SegmentTranslationDao::updateTranslationAndStatusAndDate( $new_translation );
 
-            $translation = new SegmentTranslationChangeVector( $new_translation );
-            $translation->setOldTranslation( $old_translation );
-
-            $job->getProject()->getFeatures()->run( 'updateRevisionScore', $translation );
+            if ( $chunk->getProject()->hasFeature( Features::TRANSLATION_VERSIONS ) ) {
+                $segmentTransaltionEvent = new SegmentTranslationEventModel( $old_translation, $new_translation, $user, $source_page ) ;
+                $batchEventCreator->addEventModel( $segmentTransaltionEvent ) ;
+            }
         }
+
+        $batchEventCreator->save() ;
 
         if ( !empty( $params[ 'segment_ids' ] ) ) {
             $counter = new WordCount_CounterModel();
-            $counter->initializeJobWordCount( $job->id, $job->password );
+            $counter->initializeJobWordCount( $chunk->id, $chunk->password );
         }
 
         $this->_doLog( 'completed' );
@@ -87,8 +106,8 @@ class BulkSegmentStatusChangeWorker extends AbstractWorker {
             $message = json_encode( [
                     '_type' => 'bulk_segment_status_change',
                     'data'  => [
-                            'id_job'    => $job->id,
-                            'passwords' => $job->password,
+                            'id_job'    => $chunk->id,
+                            'passwords' => $chunk->password,
                             'id_client' => $client_id,
                             'payload'   => $payload,
                     ]

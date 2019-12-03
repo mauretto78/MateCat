@@ -671,7 +671,13 @@ class ProjectManager {
                     ];
                     //we can not write to disk!! Break project creation
                 }
-
+                // S3 EXCEPTIONS HERE
+                elseif ($e->getCode() == -200 ) {
+                    $this->projectStructure[ 'result' ][ 'errors' ][] = [
+                            "code" => -200,
+                            "message" => $e->getMessage()
+                    ];
+                }
                 $this->__clearFailedProject( $e );
 
                 //EXIT
@@ -709,15 +715,24 @@ class ProjectManager {
                     }
                 }
 
-                if ( $this->total_segments > 100000 || ( $this->total_segments * count( $this->projectStructure[ 'target_language' ] ) ) > 420000 ) {
-                    //Allow projects with only one target language and 100000 segments ( ~ 550.000 words )
-                    //OR
-                    //A multi language project with max 420000 segments ( EX: 42000 segments in 10 languages ~ 2.700.000 words )
-                    throw new Exception( "MateCat is unable to create your project. We can do it for you. Please contact " . INIT::$SUPPORT_MAIL, 128 );
-                }
+            }
 
+            if ( $this->total_segments > 100000 || ( $this->files_word_count * count( $this->projectStructure[ 'target_language' ] ) ) > 1000000 ) {
+                //Allow projects with only one target language and 100000 segments ( ~ 550.000 words )
+                //OR
+                //A multi language project with max 420000 segments ( EX: 42000 segments in 10 languages ~ 2.700.000 words )
+                throw new Exception( "MateCat is unable to create your project. We can do it for you. Please contact " . INIT::$SUPPORT_MAIL, 128 );
+            }
+
+            $this->features->run( "beforeInsertSegments", $this->projectStructure,
+                    [
+                            'total_project_segments' => $this->total_segments,
+                            'files_wc'               => $this->files_word_count
+                    ]
+            );
+
+            foreach( $totalFilesStructure as $fid => $empty ){
                 $this->_storeSegments( $fid );
-
             }
 
             $this->_createJobs( $this->projectStructure );
@@ -749,6 +764,8 @@ class ProjectManager {
                         "code" => $e->getCode(), "message" => $e->getMessage()
                 ];
             }
+
+            $this->_log( $this->projectStructure[ 'result' ][ 'errors' ] );
 
             //EXIT
             return false;
@@ -1218,7 +1235,11 @@ class ProjectManager {
             $newJob->total_raw_wc      = $this->files_word_count;
             $newJob->only_private_tm   = $projectStructure[ 'only_private' ];
 
-            $this->features->run( "beforeInsertJobStruct", $newJob );
+            $this->features->run( "beforeInsertJobStruct", $newJob, $projectStructure, [
+                            'total_project_segments' => $this->total_segments,
+                            'files_wc'               => $this->files_word_count
+                    ]
+            );
 
             $newJob = Jobs_JobDao::createFromStruct( $newJob );
 
@@ -1572,6 +1593,8 @@ class ProjectManager {
 
         Shop_Cart::getInstance( 'outsource_to_external_cache' )->deleteCart();
 
+        $this->features->run( 'postJobSplitted', $projectStructure );
+
     }
 
     /**
@@ -1586,7 +1609,6 @@ class ProjectManager {
 
         \Database::obtain()->begin();
         $this->_splitJob( $projectStructure );
-        $this->features->run( 'postJobSplitted', $projectStructure );
         $this->dbHandler->getConnection()->commit();
 
     }
@@ -1968,12 +1990,17 @@ class ProjectManager {
                 }
             }
 
-            $fs->moveFromCacheToFileDir(
+            $moved = $fs->moveFromCacheToFileDir(
                     $fileDateSha1Path,
                     $this->projectStructure[ 'source_language' ],
                     $fid,
                     $originalFileName
             );
+
+            // check if the files were moved
+            if (true !== $moved) {
+                throw new \Exception('Project creation failed. Please refresh page and retry.', -200);
+            }
 
             $this->projectStructure[ 'file_id_list' ]->append( $fid );
 

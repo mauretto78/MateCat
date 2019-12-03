@@ -39,7 +39,7 @@ class ChunkPasswordValidator extends Base {
 
         $filterArgs = [
                 'id_job'   => [
-                        'filter' => FILTER_SANITIZE_STRING, 'flags' => FILTER_FLAG_STRIP_LOW
+                        'filter' => FILTER_SANITIZE_NUMBER_INT
                 ],
                 'password' => [
                         'filter' => FILTER_SANITIZE_STRING, 'flags' => FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
@@ -74,6 +74,7 @@ class ChunkPasswordValidator extends Base {
             if ( $this->chunkReview ) {
                 $this->chunk = $this->chunkReview->getChunk();
                 $this->chunk->setIsReview( true );
+                $this->chunk->setSourcePage( $this->chunkReview->source_page );
             } else {
                 throw new NotFoundException( 'Record not found' );
             }

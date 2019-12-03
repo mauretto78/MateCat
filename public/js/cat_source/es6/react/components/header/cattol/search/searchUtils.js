@@ -102,7 +102,8 @@ let SearchUtils = {
                     status: this.searchParams.status,
                     matchcase: this.searchParams['match-case'],
                     exactmatch: this.searchParams['exact-match'],
-                    replace: replace
+                    replace: replace,
+                    revision_number: config.revisionNumber
                 },
                 success: function(d) {
                     SearchUtils.execFind_success(d);
@@ -110,10 +111,12 @@ let SearchUtils = {
             });
         };
 		//Save the current segment to not lose the translation
-        var segment;
         try {
+            var segment;
+            var segmentObj = SegmentStore.getSegmentByIdToJS(UI.currentSegmentId, UI.getSegmentFileId(UI.currentSegment));
+            var segmentIsToSave = (config.isReview && segmentObj.status.toLowerCase() === 'approved') || ( !config.isReview && segmentObj.status.toLowerCase() !== 'approved');
             segment = UI.Segment.findAbsolute( UI.currentSegmentId );
-            if ( UI.translationIsToSave( segment ) ) {
+            if ( UI.translationIsToSave( segment ) && UI.segmentIsModified(segment.id) && segmentIsToSave ) {
                 UI.saveSegment(UI.currentSegment).then(() => {
                     makeSearchFn()
                 });
@@ -249,7 +252,8 @@ let SearchUtils = {
                 status: p.status,
                 matchcase: p['match-case'],
                 exactmatch: p['exact-match'],
-                replace: replace
+                replace: replace,
+                revision_number: config.revisionNumber
             },
             success: function(d) {
                 if(d.errors.length) {
@@ -321,7 +325,7 @@ let SearchUtils = {
                     $(this).replaceWith(a);
                 });
             } else {
-                if ( seg.length > 0 ) {
+                if ( seg && seg.length > 0 ) {
                     var sid = parseInt(UI.getSegmentId(seg));
                     if (where == 'before') {
                         $('section').each(function() {

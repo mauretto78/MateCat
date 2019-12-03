@@ -76,7 +76,7 @@ class Search extends React.Component {
     handleCancelClick() {
         this.dropdownInit = false;
         UI.body.removeClass('searchActive');
-        this.handleClearClick()
+        this.handleClearClick();
         if (UI.segmentIsLoaded(UI.currentSegmentId)) {
             UI.gotoOpenSegment();
         } else {
@@ -87,9 +87,10 @@ class Search extends React.Component {
         }
 
         this.resetStatusFilter();
+        let segment = UI.currentSegment;
         setTimeout(() => {
             CatToolActions.closeSubHeader();
-            UI.markGlossaryItemsInSource(UI.currentSegment, UI.cachedGlossaryData);
+            UI.markGlossaryItemsInSource(segment, UI.cachedGlossaryData.sid);
             this.setState(_.cloneDeep(this.defaultState));
         });
     }
@@ -157,6 +158,12 @@ class Search extends React.Component {
     handleStatusChange(value) {
         let search =  _.cloneDeep(this.state.search);
         search['selectStatus'] = value;
+        if ( value === 'APPROVED-2') {
+            search.revisionNumber = 2;
+            search['selectStatus'] = 'APPROVED';
+        } else {
+            search.revisionNumber = null;
+        }
         this.setState({
             search: search,
             funcFindButton: true
@@ -314,10 +321,18 @@ class Search extends React.Component {
     render() {
 
         let options = config.searchable_statuses.map(function (item, index) {
-            return <div className="item" key={index} data-value={item.value}>
-                <div  className={"ui "+ item.label.toLowerCase() +"-color empty circular label"} />
-                {item.label}
-            </div>;
+            return (<React.Fragment key={index}>
+                <div className="item" key={index} data-value={item.value}>
+                    <div  className={"ui "+ item.label.toLowerCase() +"-color empty circular label"} />
+                    {item.label}
+                </div>
+                { config.secondRevisionsCount && item.value === 'APPROVED' ? (
+                <div className="item" key={index+'-2'} data-value={'APPROVED-2'}>
+                    <div  className={"ui "+ item.label.toLowerCase() +"-2ndpass-color empty circular label"} />
+                    {item.label}
+                </div>
+                ) : null }
+                </React.Fragment>);
         });
         let findIsDisabled = true;
         if ( this.state.search.searchTarget !== "" || this.state.search.searchSource !== "") {

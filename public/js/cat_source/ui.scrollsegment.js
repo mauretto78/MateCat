@@ -82,15 +82,15 @@
         if ( highlight ) { 
             scrollPromise.done( function() {
                 SegmentActions.highlightEditarea(segment.find(".editarea").data("sid"));
-                if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), true);
-                if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), false);
+                // if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), true);
+                // if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), false);
             }); 
         }
         else {
             scrollPromise.done( function() {
-                if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), true);
-                if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), false);
-            }); 
+                // if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), true);
+                // if (LXQ.enabled()) LXQ.redoHighlighting(segment.find(".editarea").data("sid"), false);
+            });
         }
         return scrollPromise ; 
     }
@@ -105,6 +105,8 @@
             return doDirectScroll( segment, highlight, quick ) ; 
         } else if( $(segment.selector + '-1').length ) {
             return doDirectScroll( $(segment.selector + '-1'), highlight, quick ) ;
+        }else if( $('#segment-' + idSegment + '-1').length ) {
+            return doDirectScroll( $('#segment-' + idSegment + '-1'), highlight, quick ) ;
         }
         else if ( idSegment ){
             return tryToRenderAgain( idSegment, highlight, true ) ;

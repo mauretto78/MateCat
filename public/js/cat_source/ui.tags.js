@@ -144,13 +144,14 @@ $.extend(UI, {
      * @returns {*}
      */
     transformTagsWithHtmlAttribute: function (tx) {
-        var returnValue;
+        var returnValue = tx;
         try {
+            if (tx.indexOf('locked-inside') > -1) return tx;
             var base64Array=[];
             var phIDs =[];
             tx = tx.replace( /&quot;/gi, '"' );
 
-            tx = tx.replace( /&lt;ph.*?id="(.*?)"/gi, function (match, text) {
+            tx = tx.replace( /&lt;ph.*?id="(.*?)".*?&gt/gi, function (match, text) {
                 phIDs.push(text);
                 return match;
             });
@@ -159,11 +160,13 @@ $.extend(UI, {
                 return match.replace(text, "<span contenteditable='false' class='locked locked-inside tag-html-container-close' >\"" + text + "</span>");
             });
             tx = tx.replace( /base64:(.*?)"/gi , function (match, text) {
+                if ( phIDs.length === 0 ) return text;
                 base64Array.push(text);
                 var id = phIDs.shift();
                 return "<span contenteditable='false' class='locked locked-inside inside-attribute' data-original='base64:" + text+ "'><a>("+ id + ")</a>" + Base64.decode(text) + "</span>";
             });
             tx = tx.replace( /(&lt;ph.*?equiv-text=")/gi, function (match, text) {
+                if ( base64Array.length === 0 ) return text;
                 var base = base64Array.shift();
                 return "<span contenteditable='false' class='locked locked-inside tag-html-container-open' >" + text + "base64:" + base + "</span>";
             });

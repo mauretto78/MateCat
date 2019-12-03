@@ -2,16 +2,9 @@
 class QualitySummaryTable extends React.Component {
     constructor (props) {
         super(props);
-        this.lqaNestedCategories = this.props.jobInfo.get('quality_summary').get('categories');
+        this.lqaNestedCategories = this.props.qualitySummary.get('categories');
         this.thereAreSubCategories = false;
         this.getTotalSeverities();
-        this.qaLimit = this.props.jobInfo.getIn(['quality_summary', 'passfail', 'options', 'limit']) ;
-        if (this.thereAreSubCategories) {
-            this.htmlBody = this.getBodyWithSubtagories();
-        } else {
-            this.htmlBody = this.getBody();
-        }
-        this.htmlHead = this.getHeader();
 
     }
     getTotalSeverities() {
@@ -21,7 +14,7 @@ class QualitySummaryTable extends React.Component {
             if (cat.get('subcategories').size === 0) {
                 cat.get('severities').forEach((sev)=>{
                     if (this.severitiesNames.indexOf( sev.get('label') ) === -1 ) {
-                        this.severities.push(sev.toJS());
+                        this.severities.unshift(sev.toJS());
                         this.severitiesNames.push(sev.get('label'));
                     }
                 });
@@ -30,35 +23,36 @@ class QualitySummaryTable extends React.Component {
                 cat.get('subcategories').forEach((subCat)=>{
                     subCat.get('severities').forEach((sev)=>{
                         if (this.severitiesNames.indexOf(sev.get('label')) === -1 ) {
-                            this.severities.push(sev.toJS());
+                            this.severities.unshift(sev.toJS());
                             this.severitiesNames.push(sev.get('label'));
                         }
                     });
                 });
             }
         });
+        this.severities = _.orderBy(this.severities, ['penalty'],['asc']);
     }
     getIssuesForCategory(categoryId) {
-        if (this.props.jobInfo.get('quality_summary').size > 0 ) {
-            return this.props.jobInfo.get('quality_summary').get('revise_issues').find((item, key)=>{
+        if (this.props.qualitySummary.size > 0 ) {
+            return this.props.qualitySummary.get('revise_issues').find((item, key)=>{
                 return parseInt(key) === parseInt(categoryId);
             });
         }
     }
     getIssuesForCategoryWithSubcategory(category, sevLabel) {
         let total = 0;
-        if (this.props.jobInfo.get('quality_summary').size > 0 ) {
+        if (this.props.qualitySummary.size > 0 ) {
             if ( category.subcategories.length > 0 ) {
                 category.subcategories.forEach((sub)=>{
-                    if ( !_.isUndefined(this.props.jobInfo.get('quality_summary').get('revise_issues').get(sub.id) ) &&
-                        this.props.jobInfo.get('quality_summary').get('revise_issues').get(sub.id).get('founds').get(sevLabel)
+                    if ( !_.isUndefined(this.props.qualitySummary.get('revise_issues').get(sub.id) ) &&
+                        this.props.qualitySummary.get('revise_issues').get(sub.id).get('founds').get(sevLabel)
                     ) {
-                        total +=   this.props.jobInfo.get('quality_summary').get('revise_issues').get(sub.id).get('founds').get(sevLabel);
+                        total +=   this.props.qualitySummary.get('revise_issues').get(sub.id).get('founds').get(sevLabel);
                     }
                 });
             } else {
-                if ( this.props.jobInfo.get('quality_summary').get('revise_issues').get(category.id) ) {
-                    total = this.props.jobInfo.get('quality_summary').get('revise_issues').get(category.id).get('founds').get(sevLabel)
+                if ( this.props.qualitySummary.get('revise_issues').get(category.id) ) {
+                    total = this.props.qualitySummary.get('revise_issues').get(category.id).get('founds').get(sevLabel)
                 }
             }
         }
@@ -67,7 +61,7 @@ class QualitySummaryTable extends React.Component {
     getCategorySeverities(categoryId) {
         let severities;
         this.lqaNestedCategories.forEach((cat)=>{
-            if ( categoryId === cat.get('id') ) {
+            if ( parseInt(categoryId) === parseInt(cat.get('id')) ) {
                 severities = ( cat.get('severities') ) ? cat.get('severities') : cat.get('subcategories').get(0).get('severities');
             }
         });
@@ -82,7 +76,7 @@ class QualitySummaryTable extends React.Component {
             </div>;
             html.push(item);
         });
-        let totalScore = Math.round(this.props.jobInfo.get('quality_summary').get('total_issues_weight'));
+        let totalScore = this.props.qualitySummary.get('total_issues_weight');
         return <div className="qr-head">
             <div className="qr-title qr-issue">Issues</div>
             {html}
@@ -124,7 +118,7 @@ class QualitySummaryTable extends React.Component {
             {html}
         </div>
     }
-    getBodyWithSubtagories() {
+    getBodyWithSubcategories() {
         let  html = [];
         this.lqaNestedCategories.forEach((cat, index)=>{
             let catHtml = [];
@@ -156,10 +150,18 @@ class QualitySummaryTable extends React.Component {
             {html}
         </div>
     }
+
     render () {
+        let htmlBody;
+        let htmlHead = this.getHeader();
+        if (this.thereAreSubCategories) {
+            htmlBody = this.getBodyWithSubcategories();
+        } else {
+            htmlBody = this.getBody();
+        }
         return <div className="qr-quality shadow-1">
-            {this.htmlHead}
-            {this.htmlBody}
+            {htmlHead}
+            {htmlBody}
         </div>
     }
 }

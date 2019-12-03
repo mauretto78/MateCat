@@ -1,11 +1,4 @@
-/*
-Document:       common
-Created:         7-ago-2013, 14.49.42
-Author:          andreamartines
-Description:      Common CSS rules.
- */
-
- html, body {
+html, body {
     height: 100%;
 }
 
@@ -4123,14 +4116,14 @@ body.side-popup {
     font-size: 18px;
 }
 
-#menu-site li a.bigred {
+#menu-site li a.bigblue {
     font-size: 18px !important;
     border: none !important;
-    color: #fff !important;
+    color: #3aa9dd !important;
     border-radius: 4px;
-    background-color: #cf3d2b;
-    border-bottom: 2px solid #343434 !important;
-    padding: 10px;
+    background-color: #fff;
+    //border-bottom: 2px solid #343434 !important;
+    padding: 7px;
     font-weight: bold;
     margin-left: 5px;
     margin-top: 6px;
@@ -4140,6 +4133,13 @@ body.side-popup {
 #menu-site li a.bigred:hover {
 background: #3aa9dd!important;
 }
+
+
+#menu-site li a.bigblue:hover {
+    background: #3aa9dd!important;
+    color: #fff !important;
+}
+
 
 #menu-site li a:hover {
     color: #3aa9dd;

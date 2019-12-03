@@ -14,9 +14,11 @@ use API\App\Json\OutsourceConfirmation;
 use CatUtils;
 use Chunks_ChunkStruct;
 use DataAccess\ShapelessConcreteStruct;
+use Features\ReviewExtended\ReviewUtils as ReviewUtils;
 use FeatureSet;
 use Langs_LanguageDomains;
 use Langs_Languages;
+use LQA\ChunkReviewDao;
 use ManageUtils;
 use TmKeyManagement_ClientTmKeyStruct;
 use Users_UserStruct;
@@ -47,6 +49,7 @@ class Job {
      */
     public function setUser( Users_UserStruct $user = null ) {
         $this->user = $user;
+
         return $this;
     }
 
@@ -57,6 +60,7 @@ class Job {
      */
     public function setCalledFromApi( $called_from_api ) {
         $this->called_from_api = (bool)$called_from_api;
+
         return $this;
     }
 
@@ -67,7 +71,7 @@ class Job {
      */
     protected function getKeyList( Chunks_ChunkStruct $jStruct ) {
 
-        if( empty( $this->user ) ){
+        if ( empty( $this->user ) ) {
             return [];
         }
 
@@ -82,7 +86,7 @@ class Job {
     }
 
     /**
-     * @param                         $jStruct Chunks_ChunkStruct
+     * @param                         $chunk Chunks_ChunkStruct
      *
      * @param \Projects_ProjectStruct $project
      * @param FeatureSet              $featureSet
@@ -90,10 +94,10 @@ class Job {
      * @return array
      * @throws \Exception
      */
-    public function renderItem( Chunks_ChunkStruct $jStruct, \Projects_ProjectStruct $project, FeatureSet $featureSet ) {
+    public function renderItem( Chunks_ChunkStruct $chunk, \Projects_ProjectStruct $project, FeatureSet $featureSet ) {
 
-        $outsourceInfo = $jStruct->getOutsource();
-        $tStruct       = $jStruct->getTranslator();
+        $outsourceInfo = $chunk->getOutsource();
+        $tStruct       = $chunk->getTranslator();
         $outsource     = null;
         $translator    = null;
         if ( !empty( $outsourceInfo ) ) {
@@ -103,11 +107,11 @@ class Job {
         }
 
         $jobStats = new WordCount_Struct();
-        $jobStats->setIdJob( $jStruct->id );
-        $jobStats->setDraftWords( $jStruct->draft_words + $jStruct->new_words ); // (draft_words + new_words) AS DRAFT
-        $jobStats->setRejectedWords( $jStruct->rejected_words );
-        $jobStats->setTranslatedWords( $jStruct->translated_words );
-        $jobStats->setApprovedWords( $jStruct->approved_words );
+        $jobStats->setIdJob( $chunk->id );
+        $jobStats->setDraftWords( $chunk->draft_words + $chunk->new_words ); // (draft_words + new_words) AS DRAFT
+        $jobStats->setRejectedWords( $chunk->rejected_words );
+        $jobStats->setTranslatedWords( $chunk->translated_words );
+        $jobStats->setApprovedWords( $chunk->approved_words );
 
         $lang_handler = Langs_Languages::getInstance();
 
@@ -115,26 +119,26 @@ class Job {
         $subjects        = $subject_handler->getEnabledDomains();
 
         $subjects_keys = Utils::array_column( $subjects, "key" );
-        $subject_key   = array_search( $jStruct->subject, $subjects_keys );
+        $subject_key   = array_search( $chunk->subject, $subjects_keys );
 
-        $warningsCount = $jStruct->getWarningsCount();
+        $warningsCount = $chunk->getWarningsCount();
 
-        if( $featureSet->hasRevisionFeature() ) {
+        if ( $featureSet->hasRevisionFeature() ) {
             $reviseIssues = new \stdClass();
 
-        } else{
+        } else {
 
             $reviseClass = new \Constants_Revise();
 
             $jobQA = new \Revise_JobQA(
-                    $jStruct->id,
-                    $jStruct->password,
+                    $chunk->id,
+                    $chunk->password,
                     $jobStats->getTotal(),
                     $reviseClass
             );
 
-            list( $jobQA, $reviseClass ) = $featureSet->filter( "overrideReviseJobQA", [ $jobQA, $reviseClass ], $jStruct->id,
-                    $jStruct->password,
+            list( $jobQA, $reviseClass ) = $featureSet->filter( "overrideReviseJobQA", [ $jobQA, $reviseClass ], $chunk->id,
+                    $chunk->password,
                     $jobStats->getTotal() );
 
             /**
@@ -142,55 +146,73 @@ class Job {
              */
             $jobQA->retrieveJobErrorTotals();
             $jobQA->evalJobVote();
-            $qa_data      = $jobQA->getQaData();
+            $qa_data = $jobQA->getQaData();
 
             $reviseIssues = [];
             foreach ( $qa_data as $issue ) {
-                $reviseIssues[ str_replace( " " , "_", strtolower( $issue[ 'type' ] ) ) ] = [
+                $reviseIssues[ str_replace( " ", "_", strtolower( $issue[ 'type' ] ) ) ] = [
                         'allowed' => $issue[ 'allowed' ],
                         'found'   => $issue[ 'found' ]
                 ];
             }
         }
 
+        $chunkReviews = ( new ChunkReviewDao() )->findChunkReviews( $chunk );
+
         $result = [
-                'id'                    => (int)$jStruct->id,
-                'password'              => $jStruct->password,
-                'source'                => $jStruct->source,
-                'target'                => $jStruct->target,
-                'sourceTxt'             => $lang_handler->getLocalizedName( $jStruct->source ),
-                'targetTxt'             => $lang_handler->getLocalizedName( $jStruct->target ),
-                'job_first_segment'     => $jStruct->job_first_segment,
-                'status'                => $jStruct->status_owner,
-                'subject'               => $jStruct->subject,
-                'subject_printable'     => $subjects[$subject_key]['display'],
-                'owner'                 => $jStruct->owner,
-                'open_threads_count'    => (int)$jStruct->getOpenThreadsCount(),
-                'create_timestamp'      => strtotime( $jStruct->create_date ),
-                'created_at'            => Utils::api_timestamp( $jStruct->create_date ),
-                'create_date'           => $jStruct->create_date,
-                'formatted_create_date' => ManageUtils::formatJobDate( $jStruct->create_date ),
-                'quality_overall'       => CatUtils::getQualityOverallFromJobStruct( $jStruct, $project, $featureSet ),
-                'pee'                   => $jStruct->getPeeForTranslatedSegments(),
-                'tte'                   => (int)((int)$jStruct->total_time_to_edit/1000),
-                'private_tm_key'        => $this->getKeyList( $jStruct ),
+                'id'                    => (int)$chunk->id,
+                'password'              => $chunk->password,
+                'source'                => $chunk->source,
+                'target'                => $chunk->target,
+                'sourceTxt'             => $lang_handler->getLocalizedName( $chunk->source ),
+                'targetTxt'             => $lang_handler->getLocalizedName( $chunk->target ),
+                'job_first_segment'     => $chunk->job_first_segment,
+                'status'                => $chunk->status_owner,
+                'subject'               => $chunk->subject,
+                'subject_printable'     => $subjects[ $subject_key ][ 'display' ],
+                'owner'                 => $chunk->owner,
+                'open_threads_count'    => (int)$chunk->getOpenThreadsCount(),
+                'create_timestamp'      => strtotime( $chunk->create_date ),
+                'created_at'            => Utils::api_timestamp( $chunk->create_date ),
+                'create_date'           => $chunk->create_date,
+                'formatted_create_date' => ManageUtils::formatJobDate( $chunk->create_date ),
+                'quality_overall'       => CatUtils::getQualityOverallFromJobStruct( $chunk, $project, $featureSet ),
+                'pee'                   => $chunk->getPeeForTranslatedSegments(),
+                'tte'                   => (int)( (int)$chunk->total_time_to_edit / 1000 ),
+                'private_tm_key'        => $this->getKeyList( $chunk ),
                 'warnings_count'        => $warningsCount->warnings_count,
                 'warning_segments'      => ( isset( $warningsCount->warning_segments ) ? $warningsCount->warning_segments : [] ),
-                'stats'                 => CatUtils::getFastStatsForJob( $jobStats, false ),
+                'stats'                 => ReviewUtils::formatStats( CatUtils::getFastStatsForJob( $jobStats, false ), $chunkReviews ),
                 'outsource'             => $outsource,
                 'translator'            => $translator,
-                'total_raw_wc'          => (int)$jStruct->total_raw_wc,
+                'total_raw_wc'          => (int)$chunk->total_raw_wc,
                 'quality_summary'       => [
-                        'equivalent_class' => $jStruct->getQualityInfo(),
-                        'quality_overall'  => $jStruct->getQualityOverall(),
-                        'errors_count'     => (int)$jStruct->getErrorsCount(),
-                        'revise_issues' => $reviseIssues
+                        'equivalent_class' => $chunk->getQualityInfo(),
+                        'quality_overall'  => $chunk->getQualityOverall(),
+                        'errors_count'     => (int)$chunk->getErrorsCount(),
+                        'revise_issues'    => $reviseIssues
                 ],
 
         ];
 
+        // add revise_passwords to stats
+        foreach ( $chunkReviews as $chunk_review ) {
 
-        $project = $jStruct->getProject();
+            if ( $chunk_review->source_page <= \Constants::SOURCE_PAGE_REVISION ) {
+                $result[ 'revise_passwords' ][] = [
+                        'revision_number' => 1,
+                        'password'        => $chunk_review->review_password
+                ];
+            } else {
+                $result[ 'revise_passwords' ][] = [
+                        'revision_number' => ReviewUtils::sourcePageToRevisionNumber( $chunk_review->source_page ),
+                        'password'        => $chunk_review->review_password
+                ];
+            }
+
+        }
+
+        $project = $chunk->getProject();
 
         /**
          * @var $projectData ShapelessConcreteStruct[]
@@ -202,12 +224,12 @@ class Job {
         /** @var $formatted ProjectUrls */
         $formatted = $featureSet->filter( 'projectUrls', $formatted );
 
-        $urlsObject = $formatted->render( true );
-        $result[ 'urls' ] = $urlsObject[ 'jobs' ][ $jStruct->id ][ 'chunks' ][ $jStruct->password ];
+        $urlsObject       = $formatted->render( true );
+        $result[ 'urls' ] = $urlsObject[ 'jobs' ][ $chunk->id ][ 'chunks' ][ $chunk->password ];
 
-        $result[ 'urls' ][ 'original_download_url' ]    = $urlsObject[ 'jobs' ][ $jStruct->id ][ 'original_download_url' ];
-        $result[ 'urls' ][ 'translation_download_url' ] = $urlsObject[ 'jobs' ][ $jStruct->id ][ 'translation_download_url' ];
-        $result[ 'urls' ][ 'xliff_download_url' ]       = $urlsObject[ 'jobs' ][ $jStruct->id ][ 'xliff_download_url' ];
+        $result[ 'urls' ][ 'original_download_url' ]    = $urlsObject[ 'jobs' ][ $chunk->id ][ 'original_download_url' ];
+        $result[ 'urls' ][ 'translation_download_url' ] = $urlsObject[ 'jobs' ][ $chunk->id ][ 'translation_download_url' ];
+        $result[ 'urls' ][ 'xliff_download_url' ]       = $urlsObject[ 'jobs' ][ $chunk->id ][ 'xliff_download_url' ];
 
         return $result;
 
