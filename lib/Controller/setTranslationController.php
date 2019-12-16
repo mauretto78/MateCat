@@ -613,7 +613,6 @@ class setTranslationController extends ajaxController {
                 Log::doJsonLog( $msg );
                 Utils::sendErrMailReport( $msg );
             }
-
         }
 
         $this->result[ 'stats' ] = $this->featureSet->filter( 'filterStatsResponse', $this->result[ 'stats' ], [ 'chunk' => $this->chunk, 'segmentId' => $this->id_segment ] );

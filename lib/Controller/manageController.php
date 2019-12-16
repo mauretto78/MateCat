@@ -9,8 +9,8 @@ use Features\Dqf\CommandHandler\CreateChildProjectCommandHandler;
 use Features\Dqf\CommandHandler\CreateTranslationBatchCommandHandler;
 use Features\Dqf\CommandHandler\UpdateSegmentTranslationCommandHandler;
 use Features\Dqf\Command\CreateTranslationBatchCommand;
-use Features\Dqf\Command\CreateReviewCommand;
-use Features\Dqf\CommandHandler\CreateReviewCommandHandler;
+use Features\Dqf\Command\SubmitRevisionCommand;
+use Features\Dqf\CommandHandler\SubmitRevisionCommandHandler;
 use Features\Dqf\Command\UpdateSegmentTranslationCommand;
 
 class manageController extends viewController {
@@ -33,80 +33,88 @@ class manageController extends viewController {
 
     public function doAction() {
 
-//        try {
-//
-//            // 1. create Master Project
-//            $command = new CreateMasterProjectCommand([
-//                    'id_project' => 2,
-//                    'source_language' => 'en-US',
-//                    'file_segments_count' => [
-//                            2 => 4
-//                    ],
-//            ]);
-//            (new CreateMasterProjectCommandHandler())->handle($command);
-//
+        //d31d5e62e491
+
+        try {
+
+            // 1. create Master Project
+            $command = new CreateMasterProjectCommand([
+                    'id_project' => 9,
+                    'source_language' => 'it-IT',
+                    'file_segments_count' => [
+                            9 => 4
+                    ],
+            ]);
+            (new CreateMasterProjectCommandHandler())->handle($command);
+
 //            // 2. Create Child Project translation
 //            $command = new CreateChildProjectCommand([
-//                    'job_id' => 2,
-//                    'job_password' =>'aa28a6501983',
+//                    'job_id' => 9,
+//                    'job_password' =>'d31d5e62e491',
 //                    'type' => 'translation',
 //            ]);
 //            (new CreateChildProjectCommandHandler())->handle($command);
 //
 //            // 3. Update translation batch
 //            $command = new CreateTranslationBatchCommand([
-//                    'job_id' => 2,
-//                    'job_password' => 'aa28a6501983',
+//                    'job_id' => 9,
+//                    'job_password' => 'd31d5e62e491',
 //            ]);
 //            (new CreateTranslationBatchCommandHandler())->handle($command);
 //
 //            // 4. Update a single translation
 //            $command = new UpdateSegmentTranslationCommand([
-//                'job_id' => 2,
-//                'job_password' => 'aa28a6501983',
-//                'id_segment' => 6,
+//                'job_id' => 9,
+//                'job_password' => 'd31d5e62e491',
+//                'id_segment' => 39,
 //            ]);
 //            (new UpdateSegmentTranslationCommandHandler())->handle($command);
 //
 //            // 5. Create Child Project review (R1)
 //            $command = new CreateChildProjectCommand([
-//                    'job_id' => 2,
-//                    'job_password' =>'aa28a6501983',
+//                    'job_id' => 9,
+//                    'job_password' => 'd31d5e62e491',
 //                    'type' => 'review',
 //            ]);
 //            (new CreateChildProjectCommandHandler())->handle($command);
 //
-//            // 6. Update reviews
-//            $command = new CreateReviewCommand([
-//                    'job_id' => 2,
-//                    'job_password' => 'aa28a6501983',
+//            // 6. Update a review
+//            $command = new CreateRevisionCommand([
+//                    'job_id' => 9,
+//                    'job_password' => 'd31d5e62e491',
 //                    'source_page' => 2,
+//                    'id_segment' => 41,
 //            ]);
-//            (new CreateReviewCommandHandler())->handle($command);
+//            (new CreateRevisionCommandHandler())->handle($command);
 //
 //            // 7. Create another Child Project review (R2)
 //            $command = new CreateChildProjectCommand([
-//                    'job_id' => 2,
-//                    'job_password' =>'aa28a6501983',
+//                    'job_id' => 9,
+//                    'job_password' => 'd31d5e62e491',
 //                    'type' => 'review',
 //            ]);
 //            (new CreateChildProjectCommandHandler())->handle($command);
 //
 //            // 8. Update reviews
-//            $command = new CreateReviewCommand([
-//                    'job_id' => 2,
-//                    'job_password' =>'aa28a6501983',
-//                    'source_page' => 3,
-//                    'id_segment' => 6,
-//            ]);
-//            (new CreateReviewCommandHandler())->handle($command);
+//            $segment_ids = [41];
+//            $reviewCommandHandler = new SubmitRevùisionCommandHandler();
+//            foreach ($segment_ids as $segment_id){
+//                $command = new SubmitRevisionCommand([
+//                        'job_id' => 9,
+//                        'job_password' => 'd31d5e62e491',
+//                        'source_page' => 2,
+//                        'id_segment' => $segment_id,
+//                ]);
 //
-//        } catch (\Exception $exception){
-//            echo $exception->getMessage();
-//        }
-//
-//        var_dump('OK');
-//        die();
+//                $reviewCommandHandler->handle($command);
+//            }
+
+        } catch (\Exception $exception){
+            echo $exception->getMessage();
+        }
+
+        var_dump('OK');
+        die();
 
 
         $this->featureSet->filter( 'beginDoAction', $this );

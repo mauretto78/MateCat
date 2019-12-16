@@ -130,14 +130,14 @@ class Translations_SegmentTranslationDao extends DataAccess_AbstractDao {
      */
     public function getByFile( Files_FileStruct $file ) {
         $sql = "SELECT * FROM segment_translations st " .
-                " JOIN segments s on s.id  = st.id_segment AND s.id_file = :id_file " .
-                " WHERE s.show_in_cattool = 1 ";
+                " JOIN segments s on s.id  = st.id_segment WHERE s.id_file = :id_file " .
+                " AND s.show_in_cattool = 1 ";
 
         $conn = $this->database->getConnection();
 
         $stmt = $conn->prepare( $sql );
         $stmt->execute( [ 'id_file' => $file->id ] );
-        $stmt->setFetchMode( PDO::FETCH_CLASS, 'Translations_SegmentTranslationStruct' );
+        $stmt->setFetchMode( PDO::FETCH_CLASS, Translations_SegmentTranslationStruct::class );
 
         return $stmt->fetchAll();
     }
@@ -179,6 +179,7 @@ class Translations_SegmentTranslationDao extends DataAccess_AbstractDao {
         if($source_page and $source_page > 1){
             $query = "AND ste.final_revision = 1 " .
                     " AND source_page = :source_page";
+            $query .= " AND s.id_file = :id_file " .
 
             $params['source_page'] = $source_page;
         }

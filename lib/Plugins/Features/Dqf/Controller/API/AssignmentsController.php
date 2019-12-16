@@ -16,6 +16,9 @@ use Projects_ProjectDao;
 
 class AssignmentsController extends AbstractStatefulKleinController {
 
+    /**
+     * @throws \Exceptions\NotFoundException
+     */
     public function listAssignments() {
         $project = Projects_ProjectDao::findByIdAndPassword( $this->request->id_project, $this->request->password  ) ;
 

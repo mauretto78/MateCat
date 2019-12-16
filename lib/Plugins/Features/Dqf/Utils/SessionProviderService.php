@@ -32,7 +32,7 @@ class SessionProviderService {
      * @return mixed
      * @throws \Exception
      */
-    public static function getAnonymous( $email, $externalId ) {
+    public static function getAnonymous( $email, $externalId = null ) {
         $sessionProvider = self::getSessionProviderInstance();
 
         if ( false === $sessionProvider->hasGenericEmail( $email ) ) {

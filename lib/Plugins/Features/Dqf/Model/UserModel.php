@@ -9,10 +9,10 @@
 namespace Features\Dqf\Model;
 
 use Exception;
+use Features\Dqf\Factory\SessionProviderFactory;
 use Features\Dqf\Service\GenericSession;
 use Features\Dqf\Service\ISession;
 use Features\Dqf\Service\Session;
-use Features\Dqf\Factory\SessionProviderFactory;
 use Users_UserStruct;
 
 class UserModel {

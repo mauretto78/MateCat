@@ -61,10 +61,10 @@ class ProjectMetadata {
 
     public static function extractProjectParameters( $project_metadata ) {
         return [
-                'contentTypeId'  => $project_metadata[ 'dqf_content_type' ],
-                'industryId'     => $project_metadata[ 'dqf_industry' ],
-                'processId'      => $project_metadata[ 'dqf_process' ],
-                'qualityLevelId' => $project_metadata[ 'dqf_quality_level' ]
+                'contentTypeId'  => @$project_metadata[ 'dqf_content_type' ],
+                'industryId'     => @$project_metadata[ 'dqf_industry' ],
+                'processId'      => @$project_metadata[ 'dqf_process' ],
+                'qualityLevelId' => @$project_metadata[ 'dqf_quality_level' ]
         ];
     }
 

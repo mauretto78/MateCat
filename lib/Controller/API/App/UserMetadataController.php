@@ -28,10 +28,10 @@ class UserMetadataController extends AbstractStatefulKleinController {
         $sessionProvider = SessionProviderFactory::create();
 
         try {
-            // Authenticate and get the sessionId
+            // Authenticate and get the sessionId from DQF
             $sessionId = $sessionProvider->create( $loginParams );
 
-            // persist data on db
+            // persist metadata on db
             UserMetadata::setCredentials( $this->user->getUid(), $loginParams['username'], $loginParams['password'], $sessionId, $loginParams['isGeneric'] );
 
             // update response

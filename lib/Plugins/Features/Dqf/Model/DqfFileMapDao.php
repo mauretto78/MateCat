@@ -8,7 +8,6 @@
 
 namespace Features\Dqf\Model;
 
-use Chunks_ChunkStruct;
 use DataAccess_AbstractDao;
 use Database;
 use PDO;

@@ -148,9 +148,12 @@ class DqfProjectMapDao extends DataAccess_AbstractDao  {
         return $stmt->fetch() ;
     }
 
-    public function getChildByChunk( $chunk ) {
-        $sql = "SELECT * FROM dqf_projects_map WHERE id_job = :id_job
-                  AND password = :password AND dqf_parent_uuid IS NOT NULL
+    public function getChildByChunkAndType( $chunk, $project_type ) {
+        $sql = "SELECT * FROM dqf_projects_map 
+                WHERE id_job = :id_job
+                  AND project_type = :project_type
+                  AND password = :password 
+                  AND dqf_parent_uuid IS NOT NULL
                   AND archive_date IS NULL 
                   ORDER BY id " ;
 
@@ -162,6 +165,7 @@ class DqfProjectMapDao extends DataAccess_AbstractDao  {
         $stmt->execute([
                 'id_job'   => $chunk->id,
                 'password' => $chunk->password,
+                'project_type' => $project_type,
         ]);
 
         return $stmt->fetchAll() ;

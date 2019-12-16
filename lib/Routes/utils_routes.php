@@ -55,7 +55,7 @@ $klein->with('/api/app/dqf', function(\Klein\Klein $klein) {
     route('/jobs/[:id_job]/[:password]/[:page]/assignment/revoke', 'DELETE', 'Features\Dqf\Controller\API\GenericController', 'revokeAssignment' );
     route('/projects/[:id_project]/[:password]/assignments',       'GET', 'Features\Dqf\Controller\API\AssignmentsController', 'listAssignments' );
     route('/user/metadata',                                        'DELETE', 'Features\Dqf\Controller\API\UserController', 'clearCredentials' );
-    route('/translator/assign',                                    'POST', 'Features\Dqf\Controller\API\TranslatorController', 'assign' );
+    route('/project/create',                                   'POST', 'Features\Dqf\Controller\API\ProjectController', 'create' );
 });
 
 

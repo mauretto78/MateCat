@@ -14,18 +14,12 @@ use Features\Dqf\Transformer\SegmentTransformer;
 use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
-use Matecat\Dqf\Model\Entity\TranslatedSegment;
 use Matecat\Dqf\Model\ValueObject\TranslationBatch;
 use Matecat\Dqf\Repository\Api\ChildProjectRepository;
 use Matecat\Dqf\Repository\Api\FilesRepository;
 use Matecat\Dqf\Repository\Api\TranslationRepository;
 
 class CreateTranslationBatchCommandHandler extends AbstractTranslationCommandHandler {
-
-    /**
-     * @var CreateTranslationBatchCommand
-     */
-    private $command;
 
     /**
      * @var \Chunks_ChunkStruct
@@ -61,7 +55,7 @@ class CreateTranslationBatchCommandHandler extends AbstractTranslationCommandHan
     public function handle( $command ) {
 
         if ( false === $command instanceof CreateTranslationBatchCommand ) {
-            throw new \Exception( 'Provided command is not a valid instance of CreateMasterProjectCommand class' );
+            throw new \InvalidArgumentException( 'Provided command is not a valid instance of ' . CreateTranslationBatchCommand::class . ' class' );
         }
 
         /** @var CreateTranslationBatchCommand $command */
@@ -77,14 +71,21 @@ class CreateTranslationBatchCommandHandler extends AbstractTranslationCommandHan
     private function setUp( CreateTranslationBatchCommand $command ) {
         $this->command = $command;
         $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
-        
-        $uid          = $this->getTranslatorUid( $command->job_id, $command->job_password );
-        $sessionId    = $this->getSessionId( $uid );
-        $genericEmail = $this->getGenericEmail( $uid );
+
+        if(null === $this->chunk){
+            throw new \InvalidArgumentException('Chunk with id ' . $command->job_id . ' and password ' . $command->job_password . ' does not exist.');
+        }
+
+        $dqfReference    = $this->getDqfReferenceEmailAndUserId();
+        $this->userEmail = $dqfReference['email'];
+        $this->userId    = $dqfReference['uid'];
+
+        $sessionId    = $this->getSessionId( $this->userEmail, $this->userId );
+        $genericEmail = (null !== $this->userId) ? $this->getGenericEmail( $this->userId ) : $this->userEmail;
 
         // get the last child project on DB associated with the chunk
         $dqfProjectMapDao          = new DqfProjectMapDao();
-        $projects                  = $dqfProjectMapDao->getByType( $this->chunk, Constants::PROJECT_TYPE_TRANSLATION );
+        $projects                  = $dqfProjectMapDao->getChildByChunkAndType( $this->chunk, Constants::PROJECT_TYPE_TRANSLATION );
         $this->dqfProjectMapStruct = end( $projects );
 
         // set repos
@@ -113,8 +114,8 @@ class CreateTranslationBatchCommandHandler extends AbstractTranslationCommandHan
             // init translationBatch
             $translationBatch = new TranslationBatch( $childProject, $dqfFile, $this->chunk->target );
 
-            // get all segmentTranslation (STATUS_TRANSLATED) by files
-            $translatedSegmentTranslations = ( new \Translations_SegmentTranslationDao() )->getByFileJobIdStatusAndSourcePage( $file->id, $this->command->job_id, Constants_TranslationStatus::STATUS_TRANSLATED );
+            // get all segmentTranslation by files
+            $translatedSegmentTranslations = ( new \Translations_SegmentTranslationDao() )->getByFile( $file );
             foreach ( $translatedSegmentTranslations as $translation ) {
 
                 // if the segment is NOT a new or draft

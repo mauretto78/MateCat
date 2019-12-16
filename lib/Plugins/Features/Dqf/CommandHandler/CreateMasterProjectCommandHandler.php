@@ -29,11 +29,6 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHandler {
     private $project;
 
     /**
-     * @var CreateMasterProjectCommand
-     */
-    private $command;
-
-    /**
      * @var MasterProjectRepository
      */
     private $repo;
@@ -47,7 +42,7 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHandler {
     public function handle( $command ) {
 
         if ( false === $command instanceof CreateMasterProjectCommand ) {
-            throw new \Exception( 'Provided command is not a valid instance of CreateMasterProjectCommand class' );
+            throw new \InvalidArgumentException( 'Provided command is not a valid instance of ' . CreateMasterProjectCommand::class . ' class' );
         }
 
         $this->setUp( $command );
@@ -68,11 +63,15 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHandler {
         $this->command = $command;
         $this->project = \Projects_ProjectDao::findById( $command->id_project );
 
+        if(null === $this->project){
+            throw new \InvalidArgumentException('Project with id ' . $command->id_project . ' does not exist.');
+        }
+
         if ( empty( $this->project->getOriginalOwner()->getUid() ) ) {
             throw new \Exception( 'The project has not an owner' );
         }
 
-        $sessionId    = $this->getSessionId( $this->project->getOriginalOwner()->getUid() );
+        $sessionId    = $this->getSessionId( $this->project->getOriginalOwner()->getEmail(), $this->project->getOriginalOwner()->getUid() );
         $genericEmail = $this->getGenericEmail( $this->project->getOriginalOwner()->getUid() );
 
         $this->repo = new MasterProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
@@ -83,17 +82,17 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHandler {
      * @throws \Exception
      */
     private function createProject() {
-        $projectInputParams = ProjectMetadata::extractProjectParameters( $this->project->getMetadataAsKeyValue() );
-        $id_project         = \Database::obtain()->nextSequence( 'id_dqf_project' )[ 0 ];
-        $clientId           = \Utils::createToken();
+        $projectParameters = $this->getProjectParameters();
+        $id_project        = \Database::obtain()->nextSequence( 'id_dqf_project' )[ 0 ];
+        $clientId          = \Utils::createToken();
 
         $masterProject = new MasterProject(
                 $this->project->name,
                 $this->command->source_language,
-                (int)$projectInputParams[ 'contentTypeId' ],
-                (int)$projectInputParams[ 'industryId' ],
-                (int)$projectInputParams[ 'processId' ],
-                (int)$projectInputParams[ 'qualityLevelId' ]
+                (int)$projectParameters[ 'contentTypeId' ],
+                (int)$projectParameters[ 'industryId' ],
+                (int)$projectParameters[ 'processId' ],
+                (int)$projectParameters[ 'qualityLevelId' ]
         );
 
         $masterProject->setClientId( $clientId );
@@ -119,6 +118,47 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHandler {
         }
 
         return $dqfMasterProject;
+    }
+
+    /**
+     * @return array
+     */
+    private function getProjectParameters() {
+
+        // Take provided project parameters
+        if (
+                isset( $this->command->contentTypeId ) and $this->command->contentTypeId > 0 and
+                isset( $this->command->industryId ) and $this->command->industryId > 0 and
+                isset( $this->command->processId ) and $this->command->processId > 0 and
+                isset( $this->command->qualityLevelId ) and $this->command->qualityLevelId > 0
+        ) {
+            return [
+                    'contentTypeId'  => $this->command->contentTypeId,
+                    'industryId'     => $this->command->industryId,
+                    'processId'      => $this->command->processId,
+                    'qualityLevelId' => $this->command->qualityLevelId
+            ];
+        }
+
+        // Otherwise take them from metadata is are set
+        $paramsFromMetaData = ProjectMetadata::extractProjectParameters( $this->project->getMetadataAsKeyValue() );
+
+        if (
+                isset( $paramsFromMetaData['contentTypeId'] ) and $paramsFromMetaData['contentTypeId'] > 0 and
+                isset( $paramsFromMetaData['industryId'] ) and $paramsFromMetaData['industryId'] > 0 and
+                isset( $paramsFromMetaData['processId'] ) and $paramsFromMetaData['processId'] > 0 and
+                isset( $paramsFromMetaData['qualityLevelId'] ) and $paramsFromMetaData['qualityLevelId'] > 0
+        ) {
+            return $paramsFromMetaData;
+        }
+
+        // If no project meta data are set, and no project parameters are provided from the command, use default settings
+        return [
+                'contentTypeId'  => 15, // Other
+                'industryId'     => 24, // Undefined Sector
+                'processId'      => 3,  // MT+PE+TM+HT
+                'qualityLevelId' => 1   // Good Enough
+        ];
     }
 
     /**
@@ -273,6 +313,6 @@ class CreateMasterProjectCommandHandler extends AbstractCommandHandler {
         }
 
         $dqfSegmentsDao = new DqfSegmentsDao();
-        $dqfSegmentsDao->insertOrUpdateInATransaction($values);
+        $dqfSegmentsDao->insertOrUpdateInATransaction( $values );
     }
 }

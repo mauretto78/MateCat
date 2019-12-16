@@ -43,25 +43,26 @@ class JobsTranslatorsDao extends \DataAccess_AbstractDao {
     }
 
     /**
-     * @param $id_job
-     * @param $password
+     * @param int $id_job
+     * @param string $password
      *
-     * @return mixed
+     * @return \DataAccess_IDaoStruct|JobsTranslatorsStruct
      */
     public function findUserIdByJobIdAndPassword( $id_job, $password ) {
-        $query = "SELECT uid_translator FROM jobs_translators
+        $query = "SELECT * FROM jobs_translators
                 JOIN translator_profiles ON translator_profiles.id = jobs_translators.id_translator_profile
                 WHERE
                 id_job=:id_job AND
                 job_password=:job_password";
 
         $stmt = $this->_getStatementForCache( $query );
-        $stmt->execute([
-                'id_job'       => $id_job,
-                'job_password' => $password
-        ]);
 
-        return $stmt->fetch();
+        return $this
+                ->setCacheTTL( 60 * 60 * 24 )
+                ->_fetchObject( $stmt, new JobsTranslatorsStruct(), [
+                        'id_job'       => $id_job,
+                        'job_password' => $password
+                ] )[ 0 ];
     }
 
     /**

@@ -10,7 +10,6 @@ namespace Features\Dqf\Model;
 
 
 use DataAccess_AbstractDao;
-use PDO;
 
 class DqfReviewsDao extends DataAccess_AbstractDao {
 

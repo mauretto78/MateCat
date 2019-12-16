@@ -9,7 +9,6 @@
 
 namespace Translators;
 
-
 use API\V2\KleinController;
 use CatUtils;
 use Email\SendToTranslatorForDeliveryChangeEmail;
@@ -105,6 +104,7 @@ class TranslatorsModel {
      */
     public function setJobOwnerTimezone( $job_owner_timezone ) {
         $this->job_owner_timezone = $job_owner_timezone;
+
         return $this;
     }
 
@@ -131,7 +131,7 @@ class TranslatorsModel {
      * @param Jobs_JobStruct $jStruct
      * @param float|int      $project_cache_TTL
      */
-    public function __construct( Jobs_JobStruct $jStruct, $project_cache_TTL = 60 * 60 ) {
+    public function __construct( Jobs_JobStruct $jStruct, $project_cache_TTL = 3600 ) {
 
         //get the job
         $this->jStruct = $jStruct;
@@ -139,7 +139,7 @@ class TranslatorsModel {
         $this->id_job       = $jStruct->id;
         $this->job_password = $jStruct->password;
 
-        $this->project = $this->jStruct->getProject( $project_cache_TTL );
+        $this->project    = $this->jStruct->getProject( $project_cache_TTL );
         $this->featureSet = $this->project->getFeatures();
 
     }
@@ -269,19 +269,26 @@ class TranslatorsModel {
         $jTranslatorsDao->insertStruct( $translatorStruct, [
                 'no_nulls'            => true,
                 'on_duplicate_update' => [
+                        'email'              => 'value',
                         'delivery_date'      => 'value',
                         'job_password'       => 'value',
                         'job_owner_timezone' => 'value'
                 ]
         ] );
 
-        //Update internal variable
+        // Update internal variable
         $this->jobTranslator = $translatorStruct;
 
-        //clean cache JobsTranslatorsDao to update the delivery_date in next query
+        // clean cache JobsTranslatorsDao to update the delivery_date in next query
         $jTranslatorsDao->destroyCacheByJobStruct( $this->jStruct );
     }
 
+    /**
+     * @param Users_UserStruct $existentUser
+     *
+     * @return bool|string
+     * @throws \Exception
+     */
     protected function saveProfile( Users_UserStruct $existentUser ) {
 
         //associate the translator with an existent user and create a profile
@@ -301,7 +308,6 @@ class TranslatorsModel {
             ] );
 
             return $profileStruct->id;
-
         }
 
         return $existentProfileStruct->id;

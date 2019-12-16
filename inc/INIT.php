@@ -123,6 +123,7 @@ class INIT {
     public static $DQF_GENERIC_PASSWORD;
     public static $DQF_DEBUG;
     public static $DQF_SESSION_PROVIDER_DRIVER;
+    public static $DQF_GENERIC_EMAIL;
 
     /**
      * We proose that lxq_server is in a configuration file

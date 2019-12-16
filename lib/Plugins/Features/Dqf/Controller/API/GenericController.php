@@ -12,8 +12,6 @@ use API\App\AbstractStatefulKleinController;
 use Chunks_ChunkDao;
 use Exceptions\NotFoundException;
 use Features\Dqf\Model\CatAuthorizationModel;
-use Features\Dqf\Factory\SessionProviderFactory;
-use Features\Dqf\Utils\UserMetadata;
 use LQA\ChunkReviewDao;
 
 class GenericController extends AbstractStatefulKleinController {

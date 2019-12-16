@@ -26,19 +26,9 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
     private $childProjectRepository;
 
     /**
-     * @var CreateChildProjectCommand
-     */
-    private $command;
-
-    /**
      * @var \Chunks_ChunkStruct
      */
     private $chunk;
-
-    /**
-     * @var int
-     */
-    private $uid;
 
     /**
      * @param CreateChildProjectCommand $command
@@ -49,7 +39,7 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
     public function handle( $command ) {
 
         if ( false === $command instanceof CreateChildProjectCommand ) {
-            throw new \Exception( 'Provided command is not a valid instance of CreateChildProjectCommand class' );
+            throw new \InvalidArgumentException( 'Provided command is not a valid instance of ' . CreateChildProjectCommand::class . ' class' );
         }
 
         $allowed = [ Constants::PROJECT_TYPE_TRANSLATION, Constants::PROJECT_TYPE_REVIEW ];
@@ -75,9 +65,16 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
         $this->command = $command;
         $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
-        $this->uid    = $this->getTranslatorUid( $command->job_id, $command->job_password );
-        $sessionId    = $this->getSessionId( $this->uid );
-        $genericEmail = $this->getGenericEmail( $this->uid );
+        if(null === $this->chunk){
+            throw new \InvalidArgumentException('Chunk with id ' . $command->job_id . ' and password ' . $command->job_password . ' does not exist.');
+        }
+
+        $dqfReference    = $this->getDqfReferenceEmailAndUserId();
+        $this->userEmail = $dqfReference['email'];
+        $this->userId    = $dqfReference['uid'];
+
+        $sessionId    = $this->getSessionId( $this->userEmail, $this->userId );
+        $genericEmail = (null !== $this->userId) ? $this->getGenericEmail( $this->userId ) : $this->userEmail;
 
         $this->childProjectRepository  = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
     }
@@ -97,20 +94,19 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
         // otherwise, if the project is a 'revision', set the 'translation'
         //
         if ( $this->command->type === Constants::PROJECT_TYPE_TRANSLATION ) {
-            $parentProject     = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
+            $parentProject = ( new DqfProjectMapDao() )->findRootProject( $this->chunk );
         } elseif ( $this->command->type === Constants::PROJECT_TYPE_REVIEW ) {
-            $parentProject     = end( ( new DqfProjectMapDao() )->getChildByChunk( $this->chunk ) ); // get the last project saved on DQF by chunk
+            $parentProject = end( ( new DqfProjectMapDao() )->getChildByChunkAndType( $this->chunk, Constants::PROJECT_TYPE_TRANSLATION ) );
         }
 
         $childProject = new ChildProject( $this->command->type );
         $childProject->setParentProjectUuid( $parentProject->dqf_project_uuid );
         $childProject->setClientId( $clientId );
         $childProject->setIsDummy( false );
-        $childProject->setAssigner( $this->getAssignerEmail( $this->uid ) );
+        $childProject->setAssigner( $this->userEmail );
         $this->setReviewSettings( $childProject );
 
         $dqfChildProject = $this->childProjectRepository->save( $childProject );
-        $uid = $this->getTranslatorUid($this->command->job_id, $this->command->job_password);
 
         $struct = new DqfProjectMapStruct( [
                 'id'               => $id_project,
@@ -125,7 +121,7 @@ class CreateChildProjectCommandHandler extends AbstractCommandHandler {
                 'dqf_parent_uuid'  => $parentProject->dqf_project_uuid,
                 'create_date'      => \Utils::mysqlTimestamp( time() ),
                 'project_type'     => $this->command->type,
-                'uid'              => $uid
+                'uid'              => $this->userId
         ] );
 
         DqfProjectMapDao::insertStructWithAutoIncrements( $struct );

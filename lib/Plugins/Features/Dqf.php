@@ -10,23 +10,29 @@ use Exceptions\ValidationError;
 use Features;
 use Features\Dqf\Factory\UserRepositoryFactory;
 use Features\Dqf\Model\RevisionChildProject;
-use Features\Dqf\Model\TranslationChildProject;
 use Features\Dqf\Utils\ProjectMetadata;
 use Features\Dqf\Utils\SessionProviderService;
+use Features\Dqf\Worker\CreateMasterProjectWorker;
+use Features\Dqf\Worker\CreateTranslationOrRevisionProjectWorker;
+use Features\Dqf\Worker\SubmitRevisionWorker;
+use Features\Dqf\Worker\UpdateTranslationWorker;
 use Features\ProjectCompletion\CompletionEventStruct;
 use Features\ReviewExtended\Model\ArchivedQualityReportModel;
 use INIT;
+use Jobs_JobDao;
 use Klein\Klein;
 use Matecat\Dqf\Cache\BasicAttributes;
+use Matecat\Dqf\Constants;
 use Matecat\Dqf\Utils\DataEncryptor;
 use Monolog\Logger;
 use PHPTALWithAppend;
+use Projects_ProjectDao;
 use Projects_ProjectStruct;
+use Translators\TranslatorsModel;
 use Users_UserDao;
 use Users_UserStruct;
 use Utils;
 use WorkerClient;
-use Features\Dqf\Worker\CreateMasterProjectWorker;
 
 class Dqf extends BaseFeature {
 
@@ -83,7 +89,7 @@ class Dqf extends BaseFeature {
      * @return array
      */
     public function filterCreateProjectInputFilters( $inputFilter ) {
-        return array_merge( $inputFilter, ProjectMetadata::getInputFilter());
+        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() );
     }
 
     /**
@@ -103,6 +109,8 @@ class Dqf extends BaseFeature {
     }
 
     /**
+     * MARK AS COMPLETE
+     *
      * @param Chunks_ChunkStruct    $chunk
      * @param CompletionEventStruct $params
      * @param                       $lastId
@@ -110,19 +118,6 @@ class Dqf extends BaseFeature {
      * @throws \Exception
      */
     public function project_completion_event_saved( Chunks_ChunkStruct $chunk, CompletionEventStruct $params, $lastId ) {
-
-        // TODO: put this in a queue for background processing
-        // CREATE CHILD TRANSLATION PROJECT HERE?????
-        // IS ENQUEUING NEEDED (FOR BACKGROUND PROCESSING)?
-
-
-        // at this point we have to enqueue delivery to DQF of the translated or reviewed segments
-
-        if ( !$params->is_review ) {
-            $translationChildProject = new TranslationChildProject( $chunk );
-            $translationChildProject->createRemoteProjectsAndSubmit();
-            $translationChildProject->setCompleted();
-        }
     }
 
     public function archivedQualityReportSaved( ArchivedQualityReportModel $archivedQRModel ) {
@@ -167,8 +162,8 @@ class Dqf extends BaseFeature {
                     BasicAttributes::QUALITY_LEVEL => $controller->postInput[ 'dqf_quality_level' ],
             ];
 
-            foreach ($attributesArray as $key => $id){
-                if (false === BasicAttributes::existsById($key, $id)) {
+            foreach ( $attributesArray as $key => $id ) {
+                if ( false === BasicAttributes::existsById( $key, $id ) ) {
                     throw new ValidationError( 'input validation failed: ' . $id . ' is not a valid value for ' . $key . ' attribute.' );
                 }
             }
@@ -180,7 +175,7 @@ class Dqf extends BaseFeature {
     }
 
     public function filterNewProjectInputFilters( $inputFilter ) {
-        return array_merge( $inputFilter, ProjectMetadata::getInputFilter());
+        return array_merge( $inputFilter, ProjectMetadata::getInputFilter() );
     }
 
     /**
@@ -247,9 +242,9 @@ class Dqf extends BaseFeature {
         $error_user_not_set       = [ 'code' => -1000, 'message' => 'DQF user is not set' ];
         $error_session_id_not_set = [ 'code' => -1000, 'message' => 'DQF sessionId not set.' ];
         $error_on_remote_login    = [ 'code' => -1000, 'message' => 'DQF credentials are not correct.' ];
+        $multilang_error          = [ 'code' => -1000, 'message' => 'Cannot create multilanguage projects when DQF option is enabled' ];
 
         if ( count( $projectStructure[ 'target_language' ] ) > 1 ) {
-            $multilang_error                            = [ 'code' => -1000, 'message' => 'Cannot create multilanguage projects when DQF option is enabled' ];
             $projectStructure[ 'result' ][ 'errors' ][] = $multilang_error;
 
             return;
@@ -316,15 +311,76 @@ class Dqf extends BaseFeature {
      * DQF projects can be split only one time.
      *
      * @param $projectStructure
+     * @throws \Exception
      */
     public function postJobSplitted( $projectStructure ) {
+        $params = [
+                'job_type'     => Constants::PROJECT_TYPE_TRANSLATION,
+                'job_id'       => $projectStructure[ 'job_to_split' ],
+                'job_password' => $projectStructure[ 'job_to_split_pass' ],
+        ];
+
+        \WorkerClient::init( new \AMQHandler() );
+        \WorkerClient::enqueue( 'DQF', CreateTranslationOrRevisionProjectWorker::class, $params );
     }
 
     /**
-     * Send a single translation to DQF
+     * Create a translation project on DQF after analysis is completed
      *
+     * @param $project_id
+     * @param $_analyzed_report
+     *
+     * @throws \Exception
+     * @see TMAnalysisWorker::_tryToCloseProject()
+     */
+    public function afterTMAnalysisCloseProject( $project_id, $_analyzed_report ) {
+        $project = Projects_ProjectDao::findById( $project_id, 300 );
+        $emailOwner = $project->getOriginalOwner()->getEmail();
+
+        foreach ( $project->getChunks() as $chunk ) {
+            $params = [
+                    'job_type'     => Constants::PROJECT_TYPE_TRANSLATION,
+                    'job_id'       => $chunk->id,
+                    'job_password' => $chunk->password,
+            ];
+
+            // set the original owner as the translator of the project
+            $translatorsModel = new TranslatorsModel( $chunk );
+            $translatorsModel->setEmail( $emailOwner );
+            $translatorsModel->saveJob();
+
+            \WorkerClient::init( new \AMQHandler() );
+            \WorkerClient::enqueue( 'DQF', CreateTranslationOrRevisionProjectWorker::class, $params );
+        }
+    }
+
+    /**
      * @param $params
+     *
+     * @throws \StompException
+     * @throws \Exception
      */
     public function setTranslationCommitted( $params ) {
+
+        /** @var Chunks_ChunkStruct $chunk */
+        $chunk = $params[ 'chunk' ];
+
+        /** @var \Segments_SegmentStruct $segment */
+        $segment = $params[ 'segment' ];
+
+        $workerParams = [
+                'job_id'       => (int)$chunk->id,
+                'job_password' => $chunk->password,
+                'id_segment'   => (int)$segment->id
+        ];
+
+        WorkerClient::init( new AMQHandler() );
+
+        if ( $params[ 'source_page_code' ] === 1 ) {
+            WorkerClient::enqueue( 'DQF', UpdateTranslationWorker::class, $workerParams );
+        } else {
+            $workerParams = array_merge( [ 'source_page' => $params[ 'source_page_code' ] ], $workerParams );
+            WorkerClient::enqueue( 'DQF', SubmitRevisionWorker::class, $workerParams );
+        }
     }
 }

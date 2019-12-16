@@ -11,6 +11,7 @@ use Features\Dqf\Model\DqfProjectMapStruct;
 use Features\Dqf\Model\DqfSegmentsDao;
 use Features\Dqf\Model\DqfSegmentsStruct;
 use Features\Dqf\Transformer\SegmentTransformer;
+use Matecat\Dqf\Constants;
 use Matecat\Dqf\Model\Entity\ChildProject;
 use Matecat\Dqf\Model\Entity\File;
 use Matecat\Dqf\Model\Entity\TranslatedSegment;
@@ -19,11 +20,6 @@ use Matecat\Dqf\Repository\Api\FilesRepository;
 use Matecat\Dqf\Repository\Api\TranslationRepository;
 
 class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandHandler {
-
-    /**
-     * @var UpdateSegmentTranslationCommand
-     */
-    private $command;
 
     /**
      * @var \Chunks_ChunkStruct
@@ -68,7 +64,7 @@ class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandH
      */
     public function handle( $command ) {
         if ( false === $command instanceof UpdateSegmentTranslationCommand ) {
-            throw new \Exception( 'Provided command is not a valid instance of UpdateSegmentTranslationCommand class' );
+            throw new \InvalidArgumentException( 'Provided command is not a valid instance of ' . UpdateSegmentTranslationCommand::class . ' class' );
         }
 
         $this->setUp( $command );
@@ -81,28 +77,36 @@ class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandH
      * @throws \Exception
      */
     private function setUp( UpdateSegmentTranslationCommand $command ) {
-        $this->command = $command;
-        $this->chunk   = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
-        $this->transformer        = new SegmentTransformer();
+        $this->command     = $command;
+        $this->chunk       = \Chunks_ChunkDao::getByIdAndPassword( $command->job_id, $command->job_password );
 
-        $uid          = $this->getTranslatorUid( $command->job_id, $command->job_password );
-        $sessionId    = $this->getSessionId( $uid );
-        $genericEmail = $this->getGenericEmail( $uid );
+        if(null === $this->chunk){
+            throw new \InvalidArgumentException('Chunk with id ' . $command->job_id . ' and password ' . $command->job_password . ' does not exist.');
+        }
+
+        $this->transformer = new SegmentTransformer();
+
+        $dqfReference    = $this->getDqfReferenceEmailAndUserId();
+        $this->userEmail = $dqfReference['email'];
+        $this->userId    = $dqfReference['uid'];
+
+        $sessionId    = $this->getSessionId( $this->userEmail, $this->userId );
+        $genericEmail = (null !== $this->userId) ? $this->getGenericEmail( $this->userId ) : $this->userEmail;
 
         // get the last child project on DB associated with the chunk
         $dqfProjectMapDao          = new DqfProjectMapDao();
-        $projects                  = $dqfProjectMapDao->getByType( $this->chunk, 'translation' );
+        $projects                  = $dqfProjectMapDao->getChildByChunkAndType( $this->chunk, Constants::PROJECT_TYPE_TRANSLATION );
         $this->dqfProjectMapStruct = end( $projects );
 
-        $segment = (new \Segments_SegmentDao)->getById($this->command->id_segment);
+        $segment = ( new \Segments_SegmentDao )->getById( $this->command->id_segment );
 
         // get the DqfId of file
         $dqfFileMapDao          = new DqfFileMapDao();
         $this->dqfFileMapStruct = $dqfFileMapDao->findOne( $segment->id_file, $command->job_id );
 
         // get the DqfId of translation
-        $dqfSegmentsDao = new DqfSegmentsDao();
-        $this->dqfSegmentsStruct = $dqfSegmentsDao->getByIdSegment($command->id_segment);
+        $dqfSegmentsDao          = new DqfSegmentsDao();
+        $this->dqfSegmentsStruct = $dqfSegmentsDao->getByIdSegment( $command->id_segment );
 
         // set repos
         $this->childProjectRepository = new ChildProjectRepository( ClientFactory::create(), $sessionId, $genericEmail );
@@ -110,7 +114,7 @@ class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandH
         $this->filesRepository        = new FilesRepository( ClientFactory::create(), $sessionId, $genericEmail );
 
         // transformer
-        $this->transformer    = new SegmentTransformer();
+        $this->transformer = new SegmentTransformer();
     }
 
     /**
@@ -120,7 +124,7 @@ class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandH
         $childProject      = $this->getDqfChildProject();
         $file              = $this->getDqfFile( $childProject );
         $translatedSegment = $this->getTranslatedSegment();
-        $translatedSegment->setDqfId((int)$this->dqfSegmentsStruct->dqf_translation_id);
+        $translatedSegment->setDqfId( (int)$this->dqfSegmentsStruct->dqf_translation_id );
 
         $this->translationRepository->update( $childProject, $file, $translatedSegment );
     }
@@ -161,6 +165,6 @@ class UpdateSegmentTranslationCommandHandler extends AbstractTranslationCommandH
         // get the segment translation
         $segmentTranslation = \Translations_SegmentTranslationDao::findBySegmentAndJob( $this->command->id_segment, $this->command->job_id );
 
-        return $this->getTranslatedSegmentFromTransformer($segmentTranslation);
+        return $this->getTranslatedSegmentFromTransformer( $segmentTranslation );
     }
 }
