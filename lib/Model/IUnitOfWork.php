@@ -5,7 +5,7 @@ interface IUnitOfWork {
     /**
      * Persists a transaction
      *
-     * @return void
+     * @return bool
      */
     public function commit();
 

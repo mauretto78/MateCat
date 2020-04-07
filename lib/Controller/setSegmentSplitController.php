@@ -1,7 +1,7 @@
 <?php
 
-
 use SubFiltering\Filter;
+use TranslationsSplit\UnitOfWork;
 
 class setSegmentSplitController extends ajaxController {
 
@@ -45,13 +45,6 @@ class setSegmentSplitController extends ajaxController {
         $this->target     = $postInput[ 'target' ];
         $this->exec       = $postInput[ 'exec' ];
 
-//        if ( !$this->userIsLogged ) {
-//            $this->result[ 'errors' ][ ] = array(
-//                    'code'    => -2,
-//                    'message' => "Login is required to perform this action"
-//            );
-//        }
-
         if ( empty( $this->id_job ) ) {
             $this->result[ 'errors' ][] = [
                     'code'    => -3,
@@ -93,35 +86,34 @@ class setSegmentSplitController extends ajaxController {
             return;
         }
 
-        //save the 2 arrays in the DB
+        $translationSplitStruct = (new TranslationsSplit_SplitDAO())->getByIdSegmentAndIdJob($this->id_segment, $this->id_job);
 
-        $translationStruct = TranslationsSplit_SplitStruct::getStruct();
-
-        $translationStruct->id_segment = $this->id_segment;
-        $translationStruct->id_job     = $this->id_job;
+        if(null === $translationSplitStruct){
+            $translationSplitStruct = TranslationsSplit_SplitStruct::getStruct();
+            $translationSplitStruct->id_segment = $this->id_segment;
+            $translationSplitStruct->id_job = $this->id_job;
+        }
 
         $Filter = Filter::getInstance( $this->featureSet );
-        list( $this->segment, $translationStruct->source_chunk_lengths ) = CatUtils::parseSegmentSplit( $this->segment, '', $Filter );
+        list( $this->segment, $translationSplitStruct->source_chunk_lengths ) = CatUtils::parseSegmentSplit( $this->segment, '', $Filter );
 
         /* Fill the statuses with DEFAULT DRAFT VALUES */
-        $pieces                                  = ( count( $translationStruct->source_chunk_lengths ) > 1 ? count( $translationStruct->source_chunk_lengths ) - 1 : 1 );
-        $translationStruct->target_chunk_lengths = [
+        $pieces                                       = ( count( $translationSplitStruct->source_chunk_lengths ) > 1 ? count( $translationSplitStruct->source_chunk_lengths ) - 1 : 1 );
+        $translationSplitStruct->target_chunk_lengths = [
                 'len'      => [ 0 ],
                 'statuses' => array_fill( 0, $pieces, Constants_TranslationStatus::STATUS_DRAFT )
         ];
 
-        $translationDao = new TranslationsSplit_SplitDAO( Database::obtain() );
-        $result         = $translationDao->atomicUpdate( $translationStruct );
+        $uow = new UnitOfWork($translationSplitStruct, $this->user);
 
-        if ( $result instanceof TranslationsSplit_SplitStruct ) {
+        if ( $uow->commit() ) {
             //return success
             $this->result[ 'data' ] = 'OK';
         } else {
             Log::doJsonLog( "Failed while splitting/merging segment." );
-            Log::doJsonLog( $translationStruct );
+            Log::doJsonLog( $translationSplitStruct );
         }
     }
-
 }
 
 

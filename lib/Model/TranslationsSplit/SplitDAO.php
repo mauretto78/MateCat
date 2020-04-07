@@ -86,6 +86,27 @@ class TranslationsSplit_SplitDAO extends DataAccess_AbstractDao {
     }
 
     /**
+     * @param                            $id_segment
+     * @param                            $id_job
+     * @param int                        $ttl
+     * @param DataAccess_IDaoStruct|null $fetchObject
+     *
+     * @return DataAccess_IDaoStruct
+     */
+    public function getByIdSegmentAndIdJob($id_segment, $id_job, $ttl = 0, DataAccess_IDaoStruct $fetchObject = null)
+    {
+        $conn = Database::obtain()->getConnection();
+        $stmt = $conn->prepare( "SELECT * FROM segment_translations_splits WHERE id_segment = :id_segment AND id_job = :id_job" );
+
+        if( $fetchObject == null ){
+            $fetchObject = new TranslationsSplit_SplitStruct();
+        }
+
+        return ( new self() )->setCacheTTL( $ttl )->_fetchObject( $stmt, $fetchObject, [ 'id_segment' => $id_segment, 'id_job' => $id_job ] )[ 0 ];
+
+    }
+
+    /**
      * @param TranslationsSplit_SplitStruct $input
      *
      * @return TranslationsSplit_SplitStruct
