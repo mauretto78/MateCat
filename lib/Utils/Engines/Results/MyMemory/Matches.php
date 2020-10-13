@@ -56,7 +56,8 @@ class Engines_Results_MyMemory_Matches {
     }
 
     /**
-     * @param int $layerNum
+     * @param int  $layerNum
+     * @param null $segmentId
      *
      * @return array
      * @throws Exception
@@ -66,7 +67,7 @@ class Engines_Results_MyMemory_Matches {
         $match = [];
         $dataRefMap = [];
 
-        if(null!==$segmentId){
+        if(null !== $segmentId){
             $dataRefMap = Segments_SegmentOriginalDataDao::getSegmentDataRefMap($segmentId);
         }
 

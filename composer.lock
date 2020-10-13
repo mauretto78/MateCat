@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "34126075aa92c5fb1ae63d0e0d0dbf04",
+    "content-hash": "a42f730f3dfd58fb600b2dcb7c576c29",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.158.2",
+            "version": "3.158.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "b80957465d94c127254e36061dd3d0c3ccc94cc1"
+                "reference": "4e912c1ae4d4b3538ada36ac1478f980f9bdf329"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/b80957465d94c127254e36061dd3d0c3ccc94cc1",
-                "reference": "b80957465d94c127254e36061dd3d0c3ccc94cc1",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/4e912c1ae4d4b3538ada36ac1478f980f9bdf329",
+                "reference": "4e912c1ae4d4b3538ada36ac1478f980f9bdf329",
                 "shasum": ""
             },
             "require": {
@@ -89,7 +89,7 @@
                 "s3",
                 "sdk"
             ],
-            "time": "2020-10-05T18:13:27+00:00"
+            "time": "2020-10-09T18:11:48+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -301,16 +301,16 @@
         },
         {
             "name": "google/auth",
-            "version": "v1.14.0",
+            "version": "v1.14.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-auth-library-php.git",
-                "reference": "95c23ebd89a0a4d1b511aed81426f57388ab7268"
+                "reference": "2df57c61c2fd739a15a81f792b1ccedc3e06d2b6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/95c23ebd89a0a4d1b511aed81426f57388ab7268",
-                "reference": "95c23ebd89a0a4d1b511aed81426f57388ab7268",
+                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/2df57c61c2fd739a15a81f792b1ccedc3e06d2b6",
+                "reference": "2df57c61c2fd739a15a81f792b1ccedc3e06d2b6",
                 "shasum": ""
             },
             "require": {
@@ -349,7 +349,7 @@
                 "google",
                 "oauth2"
             ],
-            "time": "2020-10-02T22:20:36+00:00"
+            "time": "2020-10-06T18:10:43+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -703,25 +703,22 @@
         },
         {
             "name": "matecat/xliff-parser",
-            "version": "v1.0.20",
+            "version": "v1.0.26",
             "source": {
                 "type": "git",
                 "url": "https://github.com/matecat/xliff-parser.git",
-                "reference": "0327ad1f0921780ff24e4e767b40b178a1dff746"
+                "reference": "f20245a0e7b4e45db97675ba39c9e39720688a52"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/matecat/xliff-parser/zipball/0327ad1f0921780ff24e4e767b40b178a1dff746",
-                "reference": "0327ad1f0921780ff24e4e767b40b178a1dff746",
+                "url": "https://api.github.com/repos/matecat/xliff-parser/zipball/f20245a0e7b4e45db97675ba39c9e39720688a52",
+                "reference": "f20245a0e7b4e45db97675ba39c9e39720688a52",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.5"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "^2.15",
-                "fzaninotto/faker": "^1.8",
-                "phpstan/phpstan": "^0.11.12",
                 "phpunit/phpunit": "^8.2"
             },
             "type": "library",
@@ -748,7 +745,7 @@
                 "php",
                 "xliff"
             ],
-            "time": "2020-10-06T08:39:07+00:00"
+            "time": "2020-10-12T10:54:57+00:00"
         },
         {
             "name": "monolog/monolog",

@@ -34,6 +34,48 @@ class SubFilteringTest extends AbstractTest {
 
     }
 
+    public function testDataRefDoesNothing() {
+
+        $string  = '<ph id="mtc_1" equiv-text="base64:Jmx0O2gyJmd0Ow=="/>Aanvullende richtlijnen voor hosts van privékamers en gedeelde ruimtes<ph id="mtc_2" equiv-text="base64:Jmx0Oy9oMiZndDs="/> <ph id="mtc_3" equiv-text="base64:Jmx0O3AmZ3Q7"/>Hosts van privékamers of gedeelde ruimtes moeten ook:<ph id="mtc_4" equiv-text="base64:Jmx0Oy9wJmd0Ow=="/> <ph id="mtc_5" equiv-text="base64:Jmx0O3VsJmd0Ow=="/> <ph id="mtc_6" equiv-text="base64:Jmx0O2xpJmd0Ow=="/>het aantal gasten beperken om sociale afstand in alle gemeenschappelijke ruimtes mogelijk<ph id="mtc_7" equiv-text="base64:Jmx0Oy9saSZndDs="/> <ph id="mtc_8" equiv-text="base64:Jmx0O2xpJmd0Ow=="/>te maken Beperk de ruimtes waartoe gasten toegang hebben, om onnodige blootstelling voor u en uw gasten<ph id="mtc_9" equiv-text="base64:Jmx0Oy9saSZndDs="/> <ph id="mtc_10" equiv-text="base64:Jmx0O2xpJmd0Ow=="/>Ventileer gemeenschappelijke ruimtes tijdens het verblijf, indien veilig en beveiligd, zoals gespecificeerd in het<ph id="mtc_11" equiv-text="base64:Jmx0Oy9saSZndDs="/> <ph id="mtc_12" equiv-text="base64:Jmx0O2xpJmd0Ow=="/>schoonmaakprotocol Reinig en reinig gemeenschappelijke ruimtes (zoals badkamers en keukens) zo vaak mogelijk<ph id="mtc_13" equiv-text="base64:Jmx0Oy9saSZndDs="/> <ph id="mtc_14" equiv-text="base64:Jmx0Oy91bCZndDs="/> <ph id="mtc_15" equiv-text="base64:Jmx0O3AmZ3Q7"/>Sommige overheden kunnen beperkingen opleggen aan het hosten van privé- of gedeelde kamers of kan aan die ruimten aanvullende verplichtingen of eisen stellen.';
+        $expected = '&lt;ph id="mtc_1" equiv-text="base64:Jmx0O2gyJmd0Ow=="/&gt;Aanvullende richtlijnen voor hosts van privékamers en gedeelde ruimtes&lt;ph id="mtc_2" equiv-text="base64:Jmx0Oy9oMiZndDs="/&gt; &lt;ph id="mtc_3" equiv-text="base64:Jmx0O3AmZ3Q7"/&gt;Hosts van privékamers of gedeelde ruimtes moeten ook:&lt;ph id="mtc_4" equiv-text="base64:Jmx0Oy9wJmd0Ow=="/&gt; &lt;ph id="mtc_5" equiv-text="base64:Jmx0O3VsJmd0Ow=="/&gt; &lt;ph id="mtc_6" equiv-text="base64:Jmx0O2xpJmd0Ow=="/&gt;het aantal gasten beperken om sociale afstand in alle gemeenschappelijke ruimtes mogelijk&lt;ph id="mtc_7" equiv-text="base64:Jmx0Oy9saSZndDs="/&gt; &lt;ph id="mtc_8" equiv-text="base64:Jmx0O2xpJmd0Ow=="/&gt;te maken Beperk de ruimtes waartoe gasten toegang hebben, om onnodige blootstelling voor u en uw gasten&lt;ph id="mtc_9" equiv-text="base64:Jmx0Oy9saSZndDs="/&gt; &lt;ph id="mtc_10" equiv-text="base64:Jmx0O2xpJmd0Ow=="/&gt;Ventileer gemeenschappelijke ruimtes tijdens het verblijf, indien veilig en beveiligd, zoals gespecificeerd in het&lt;ph id="mtc_11" equiv-text="base64:Jmx0Oy9saSZndDs="/&gt; &lt;ph id="mtc_12" equiv-text="base64:Jmx0O2xpJmd0Ow=="/&gt;schoonmaakprotocol Reinig en reinig gemeenschappelijke ruimtes (zoals badkamers en keukens) zo vaak mogelijk&lt;ph id="mtc_13" equiv-text="base64:Jmx0Oy9saSZndDs="/&gt; &lt;ph id="mtc_14" equiv-text="base64:Jmx0Oy91bCZndDs="/&gt; &lt;ph id="mtc_15" equiv-text="base64:Jmx0O3AmZ3Q7"/&gt;Sommige overheden kunnen beperkingen opleggen aan het hosten van privé- of gedeelde kamers of kan aan die ruimten aanvullende verplichtingen of eisen stellen.';
+
+        $this->assertEquals( $expected, $this->filter->fromLayer1ToLayer2( $string ) );
+    }
+
+    public function testDataRef() {
+
+        $dataRefMap = [
+            'source1' => '${AMOUNT}',
+            'source2' => '${RIDER}',
+        ];
+
+        $segment = 'Ai colectat &lt;ph id=\"source1\" dataRef=\"source1\"/&gt; din &lt;ph id=\"source2\" dataRef=\"source2\"/&gt;?';
+        $exptected = 'Ai colectat &lt;ph id=\"source1\" dataRef=\"source1\" equiv-text="base64:JHtBTU9VTlR9"/&gt; din &lt;ph id=\"source2\" dataRef=\"source2\" equiv-text="base64:JHtSSURFUn0="/&gt;?';
+
+        $featureSet = new FeatureSet();
+        $featureSet->loadFromString( "translation_versions,review_extended,mmt,airbnb" );
+        $filter = Filter::getInstance( $featureSet, $dataRefMap );
+
+        $this->assertEquals($exptected, $filter->fromLayer1ToLayer2($segment));
+    }
+
+    public function testPcWithDataRef() {
+
+        $dataRefMap = [
+            "d1" => "_",
+            "d2" => "**",
+            "d3" => "`"
+        ];
+
+        $segment = 'Testo libero contenente &lt;pc id="1" canCopy="no" canDelete="no" dataRefEnd="d1" dataRefStart="d1"&gt;corsivo&lt;/pc&gt;, &lt;pc id="2" canCopy="no" canDelete="no" dataRefEnd="d2" dataRefStart="d2"&gt;grassetto&lt;/pc&gt;, &lt;pc id="3" canCopy="no" canDelete="no" dataRefEnd="d1" dataRefStart="d1"&gt;&lt;pc id="4" canCopy="no" canDelete="no" dataRefEnd="d2" dataRefStart="d2"&gt;grassetto + corsivo&lt;/pc&gt;&lt;/pc&gt; e &lt;pc id="5" canCopy="no" canDelete="no" dataRefEnd="d3" dataRefStart="d3"&gt;larghezza fissa&lt;/pc&gt;.';
+
+        $featureSet = new FeatureSet();
+        $featureSet->loadFromString( "translation_versions,review_extended,mmt,airbnb" );
+        $filter = Filter::getInstance( $featureSet, $dataRefMap );
+
+        //@TODO implement test here
+    }
+
     /**
      * @throws \Exception
      */
