@@ -420,9 +420,12 @@ class setTranslationController extends ajaxController {
             return -1;
         }
 
+        $ajax = self::isAjaxRequest();
+        $isRevision = self::isRevision();
+
         $this->featureSet->run( 'postAddSegmentTranslation', [
                 'chunk'       => $this->chunk,
-                'is_review'   => $this->isRevision(),
+                'is_review'   => self::isRevision(),
                 'logged_user' => $this->user
         ] );
 

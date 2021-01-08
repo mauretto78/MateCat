@@ -8,6 +8,7 @@
 
 use AbstractControllers\IController;
 use AbstractControllers\TimeLogger;
+use Validator\JobValidatorObject;
 
 /**
  * Abstract Class controller
@@ -208,4 +209,109 @@ abstract class controller implements IController {
         return $this->userIsLogged;
     }
 
+    /**
+     * @return bool
+     */
+    public static function isAjaxRequest() {
+        return ( !empty($_SERVER['HTTP_X_REQUESTED_WITH']) and strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest' );
+    }
+
+    /**
+     * @return bool
+     */
+    public static function isRevision() {
+        $isRevision = self::getIsRevisionFromIdJobAndPassword();
+
+        if ( null === $isRevision ) {
+            // isAjax request?
+            if(self::isAjaxRequest()){
+                $isRevision = self::getIsRevisionFromHttpReferer();
+            } else {
+                $isRevision = self::getIsRevisionFromRequestUri();
+            }
+        }
+
+        return $isRevision;
+    }
+
+    /**
+     * @return bool|null
+     */
+    private static function getIsRevisionFromIdJobAndPassword() {
+
+        $controller = static::getInstance();
+        $props = Utils::getPropertiesFromAnObject($controller);
+
+        // get jid and password from controller instance
+        if(isset($props['jid']) and $props['received_password']){
+            $jid      = $props['jid'];
+            $password = $props['received_password'];
+        } elseif(isset($props['id_job']) and $props['password']){
+            $jid      = $props['id_job'];
+            $password = $props['password'];
+        } else {
+            return null;
+        }
+
+        $jobValidator = new \Validator\JobValidator();
+
+        try {
+            /** @var JobValidatorObject $validatorObject */
+            $validatorObject = $jobValidator->validate( new JobValidatorObject(), [
+                    'jid'      => $jid,
+                    'password' => $password
+            ] );
+
+            if ( $validatorObject->t == 1 ) {
+                return false;
+            }
+
+            if ( $validatorObject->r1 == 1 or $validatorObject->r2 == 1 ) {
+                return true;
+            }
+
+        } catch ( \Exception $exception ) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return bool
+     */
+    private static function getIsRevisionFromRequestUri() {
+
+        if ( !isset( $_SERVER[ 'REQUEST_URI' ] ) ) {
+            return false;
+        }
+
+        $_from_url = parse_url( $_SERVER[ 'REQUEST_URI' ] );
+
+        return self::isARevisePath($_from_url['path']);
+    }
+
+    /**
+     * @return bool
+     */
+    private static function getIsRevisionFromHttpReferer() {
+
+        if ( !isset( $_SERVER[ 'HTTP_REFERER' ] ) ) {
+            return false;
+        }
+
+        $_from_url = parse_url( @$_SERVER['HTTP_REFERER'] );
+
+        return self::isARevisePath($_from_url['path']);
+    }
+
+    /**
+     * @param string $path
+     *
+     * @return bool
+     */
+    private static function isARevisePath($path)
+    {
+        return strpos( $path , "/revise" ) === 0;
+    }
 }

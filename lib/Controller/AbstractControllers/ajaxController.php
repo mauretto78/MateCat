@@ -61,15 +61,6 @@ abstract class ajaxController extends controller {
 
     }
 
-    /**
-     * @return bool
-     */
-    public static function isRevision() {
-        $_from_url = parse_url( @$_SERVER['HTTP_REFERER'] );
-        $is_revision_url = strpos( $_from_url['path'] , "/revise" ) === 0;
-        return $is_revision_url;
-    }
-
     public function parseIDSegment() {
         @list( $this->id_segment, $this->split_num ) = explode( "-", $this->id_segment );
     }

@@ -752,4 +752,27 @@ class Utils {
     public static function htmlentitiesToUft8WithoutDoubleEncoding( $string ) {
         return htmlentities( $string, ENT_QUOTES, 'UTF-8', false );
     }
+
+    /**
+     * @param $object
+     * @param $property
+     *
+     * @return array
+     */
+    public static function getPropertiesFromAnObject($object) {
+
+        $attr = [];
+
+        $reflectionClass = new ReflectionObject( $object );
+
+        foreach ($reflectionClass->getProperties() as $reflectionProperty){
+            if($reflectionProperty->isPrivate() or $reflectionProperty->isProtected()){
+                $reflectionProperty->setAccessible(true);
+            }
+
+            $attr[$reflectionProperty->getName()] = $reflectionProperty->getValue($object);
+        }
+
+        return $attr;
+    }
 }
