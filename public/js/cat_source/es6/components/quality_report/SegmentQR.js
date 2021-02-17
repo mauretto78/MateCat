@@ -261,7 +261,7 @@ class SegmentQR extends React.Component {
         return TextUtils.getDiffHtml(source, text);
     }
     openTranslateLink() {
-        window.open(this.props.urls.get('translate_url') + '#' + this.props.segment.get('sid'));
+        window.open(this.props.urls.get('translate_url') + '#' + this.props.segment.get('id'));
     }
 
     openReviseLink(revise) {
@@ -269,7 +269,7 @@ class SegmentQR extends React.Component {
             typeof this.props.urls.get('revise_url') === 'string' ||
             this.props.urls.get('revise_url') instanceof String
         ) {
-            window.open(this.props.urls.get('revise_url') + '#' + this.props.segment.get('sid'));
+            window.open(this.props.urls.get('revise_url') + '#' + this.props.segment.get('id'));
         } else {
             let url = this.props.urls
                 .get('revise_urls')
@@ -277,7 +277,7 @@ class SegmentQR extends React.Component {
                     return value.get('revision_number') === revise;
                 })
                 .get('url');
-            window.open(url + '#' + this.props.segment.get('sid'));
+            window.open(url + '#' + this.props.segment.get('id'));
         }
     }
 
