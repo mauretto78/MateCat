@@ -56,7 +56,7 @@ AppDispatcher.register(function(action) {
             QualityReportStore.storeSegments(action.files);
             QualityReportStore.emitChange(action.actionType, QualityReportStore._segmentsFiles, QualityReportStore._files, QualityReportStore._lastSegment);
             break;
-        case QRConstants.ADD_SEGMENTS:
+        case QRConstants.ADD_SEGMENTS_QR:
             QualityReportStore.addSegments(action.files);
             QualityReportStore.emitChange(QRConstants.RENDER_SEGMENTS, QualityReportStore._segmentsFiles, QualityReportStore._files, QualityReportStore._lastSegment);
             break;

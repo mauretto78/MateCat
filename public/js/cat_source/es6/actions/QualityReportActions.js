@@ -26,7 +26,7 @@ let QualityReportActions =  {
         QRApi.getSegmentsFiles(filter, segmentId).done(function ( response ) {
             if ( response.segments  && response.segments.length > 0) {
                 AppDispatcher.dispatch({
-                    actionType: QRConstants.ADD_SEGMENTS,
+                    actionType: QRConstants.ADD_SEGMENTS_QR,
                     files: response,
                 });
             } else {
