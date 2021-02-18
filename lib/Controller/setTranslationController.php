@@ -196,7 +196,7 @@ class setTranslationController extends ajaxController {
 
             $this->featureSet->loadForProject( $this->project );
 
-            $this->filter = Filter::getInstance( $this->featureSet, Segments_SegmentOriginalDataDao::getSegmentDataRefMap($this->id_segment) );
+            $this->filter = Filter::getInstance( $this->chunk->source, $this->chunk->target, $this->featureSet, Segments_SegmentOriginalDataDao::getSegmentDataRefMap($this->id_segment) );
         }
 
         //ONE OR MORE ERRORS OCCURRED : EXITING
@@ -321,10 +321,10 @@ class setTranslationController extends ajaxController {
         }
 
         $pipeline->addLast( new FromViewNBSPToSpaces() ); //nbsp are not valid xml entities we have to remove them before the QA check ( Invalid DOM )
-        $pipeline->addLast( new SprintfToPH() );
+        $pipeline->addLast( new SprintfToPH($this->chunk->source, $this->chunk->target) );
 
         $src = $pipeline->transform( $this->__postInput[ 'segment' ] );
-        $trg = CatUtils::removePhTagsFromTargetIfNotPresentInSource($src, $pipeline->transform( $this->__postInput[ 'translation' ] ));
+        $trg = $pipeline->transform( $this->__postInput[ 'translation' ] );
 
         $check = new QA( $src, $trg );
         $check->setFeatureSet( $this->featureSet );
