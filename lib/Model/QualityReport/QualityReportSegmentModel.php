@@ -114,6 +114,9 @@ class QualityReportSegmentModel {
      */
     protected function _assignIssues( $seg, $issues, $issue_comments ) {
         foreach ( $issues as $issue ) {
+
+            $issue->revision_number = ReviewUtils::sourcePageToRevisionNumber($issue->source_page);
+
             if ( isset( $issue_comments[ $issue->issue_id ] ) ) {
                 $issue->comments = $issue_comments[ $issue->issue_id ];
             }
