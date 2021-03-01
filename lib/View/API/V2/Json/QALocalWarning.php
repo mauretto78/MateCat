@@ -80,7 +80,7 @@ class QALocalWarning extends QAWarning {
             $malformedStructs = $this->QA->getMalformedXmlStructs();
 
             $featureSet = new \FeatureSet();
-            $Filter = Filter::getInstance( $featureSet, \Segments_SegmentOriginalDataDao::getSegmentDataRefMap($this->id_segment) );
+            $Filter = Filter::getInstance( $this->QA->getSourceSegLang(), $this->QA->getTargetSegLang(), $featureSet, \Segments_SegmentOriginalDataDao::getSegmentDataRefMap($this->id_segment) );
 
             foreach ( $malformedStructs[ 'source' ] as $k => $rawSource ) {
                 $malformedStructs[ 'source' ][ $k ] = $Filter->fromLayer1ToLayer2( $rawSource );
