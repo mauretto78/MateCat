@@ -38,17 +38,57 @@ export const activateGlossary = (editorState, glossary, text, sid, segmentAction
     const createGlossaryRegex = (glossaryObj, text) => {
         let re;
         try {
+
             const matches = _.map(glossaryObj, ( elem ) => (elem[0].raw_segment) ? elem[0].raw_segment: elem[0].segment);
-            const escapedMatches = matches.map((match)=>TextUtils.escapeRegExp(match));
+            const matchToExclude = findInclusiveMatches(matches);
+            let matchToUse = [];
+            _.forEach(matches, (match)=> {
+                if (matchToExclude.indexOf(match) === -1) {
+                    matchToUse.push(match);
+                }
+            });
+
+            const escapedMatches = matchToUse.map( ( match ) => TextUtils.escapeRegExp( match ) );
+
+            if ( escapedMatches.length == 0 ) {
+                throw new Error( "Empty matches list" );
+            }
+
             re = new RegExp( '\\b(' + escapedMatches.join('|') + ')\\b', "gi" );
-            //If source languace is Cyrillic or CJK
+
+            //If source language is Cyrillic or CJK
             if ( config.isCJK) {
                 re = new RegExp( '(' + escapedMatches.join('|') + ')', "gi" );
             }
-        } catch ( e ) {
-            return null;
-        }
-        return re;
+
+        } catch ( ignore ) {}
+
+        // this regexp used as default value do not match anything
+        // return this instead of null, null value causes the application crash
+        return re ? re : new RegExp( '(?!.*)', "gi" );
+    };
+    /**
+     * This function returns an array of strings that are already contained in other strings.
+     *
+     * Example:
+     *      input ['canestro', 'cane', 'gatto']
+     *      returns [ 'cane' ]
+     *
+     * @param matches
+     * @returns {Array}
+     */
+    const findInclusiveMatches = (matches) => {
+        var inclusiveMatches = [];
+        $.each(matches, function (index) {
+            $.each(matches, function (ind) {
+                if (index !== ind) {
+                    if ( _.startsWith( matches[index].toLowerCase(), this.toLowerCase() ) && matches[index].toLowerCase() !== this.toLowerCase() ) {
+                        inclusiveMatches.push( this );
+                    }
+                }
+            });
+        });
+        return inclusiveMatches;
     };
 
     const regex = createGlossaryRegex(glossary, text);
