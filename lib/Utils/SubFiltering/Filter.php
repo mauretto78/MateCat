@@ -99,8 +99,8 @@ class Filter {
     }
 
     /**
-     * @param            $source
-     * @param            $target
+     * @param string     $source
+     * @param string     $target
      * @param FeatureSet $featureSet
      * @param array      $dataRefMap
      *
