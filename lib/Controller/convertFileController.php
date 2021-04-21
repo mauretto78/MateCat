@@ -19,6 +19,8 @@ class convertFileController extends ajaxController {
 
     protected $cookieDir;
 
+    // ciao!!!!
+
     //this will prevent recursion loop when ConvertFileWrapper will call the doAction()
     protected $convertZipFile = true;
     protected $lang_handler;
